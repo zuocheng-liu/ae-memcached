@@ -1821,7 +1821,7 @@ void pre_gdb () {
  * sizeof(time_t) > sizeof(unsigned int).
  */
 volatile rel_time_t current_time;
-struct event clockevent;
+//struct event clockevent;
 
 /* time-sensitive callers can call it by hand with this, outside the normal ever-1-second timer */
 void set_current_time () {
@@ -1850,7 +1850,7 @@ int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData)
     return 1000 * 1000;
 }
 
-struct event deleteevent;
+//struct event deleteevent;
 
 //void delete_handler(int fd, short which, void *arg) {
 int delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {

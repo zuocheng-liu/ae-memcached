@@ -6,7 +6,7 @@ INC= -I${BASE_INC}
 LIBDIR= 
 LIB= 
 COMPILE_DIR=compile
-FLAG= ${LIBDIR} ${LIB} ${INC} -g
+FLAG= ${LIBDIR} ${LIB} ${INC} 
 
 
 TARGET=memcached
