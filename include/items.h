@@ -1,5 +1,7 @@
-#ifndef ITEM_H
-#define ITEM_H
+#ifndef ITEMS_H
+#define ITEMS_H
+
+#include "config.h"
 
 #define ITEM_LINKED 1
 #define ITEM_DELETED 2
@@ -47,4 +49,4 @@ char *item_stats_sizes(int *bytes);
 void item_stats(char *buffer, int buflen);
 
 
-#endif // end define ITEM_H
+#endif // end define ITEMS_H

@@ -1,35 +1,14 @@
+#ifndef MEMCACHED_H
+#define MEMCACHED_H
 /* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* $Id$ */
-#define VERSION "1.2.0"
-#define PACKAGE "memached"
-#define DATA_BUFFER_SIZE 2048
-#define UDP_READ_BUFFER_SIZE 65536
-#define UDP_MAX_PAYLOAD_SIZE 1400
-#define UDP_HEADER_SIZE 8
-#define MAX_SENDBUF_SIZE (256 * 1024 * 1024)
 
-/* Initial size of list of items being returned by "get". */
-#define ITEM_LIST_INITIAL 200
-
-/* Initial size of the sendmsg() scatter/gather array. */
-#define IOV_LIST_INITIAL 400
-
-/* Initial number of sendmsg() argument structures to allocate. */
-#define MSG_LIST_INITIAL 10
-
-/* High water marks for buffer shrinking */
-#define READ_BUFFER_HIGHWAT 8192
-#define ITEM_LIST_HIGHWAT 400
-#define IOV_LIST_HIGHWAT 600
-#define MSG_LIST_HIGHWAT 100
-
-/* Time relative to server start. Smaller than time_t on 64-bit systems. */
-typedef unsigned int rel_time_t;
+#include "config.h"
 
 #include "ae.h"
-#include "items.h"
 #include "assoc.h"
-
+#include "slabs.h"
+#include "connection.h"
 
 struct stats {
     unsigned int  curr_items;
@@ -79,72 +58,6 @@ enum conn_states {
 #define NREAD_SET 2
 #define NREAD_REPLACE 3
 
-typedef struct {
-    int    sfd;
-    int    state;
-    struct aeEventLoop *event;
-    short  ev_flags;
-    short  which;   /* which events were just triggered */
-
-    char   *rbuf;   /* buffer to read commands into */
-    char   *rcurr;  /* but if we parsed some already, this is where we stopped */
-    int    rsize;   /* total allocated size of rbuf */
-    int    rbytes;  /* how much data, starting from rcur, do we have unparsed */
-
-    char   *wbuf;
-    char   *wcurr;
-    int    wsize;
-    int    wbytes;
-    int    write_and_go; /* which state to go into after finishing current write */
-    void   *write_and_free; /* free this memory after finishing writing */
-
-    char   *ritem;  /* when we read in an item's value, it goes here */
-    int    rlbytes;
-
-    /* data for the nread state */
-
-    /*
-     * item is used to hold an item structure created after reading the command
-     * line of set/add/replace commands, but before we finished reading the actual
-     * data. The data is read into ITEM_data(item) to avoid extra copying.
-     */
-
-    void   *item;     /* for commands set/add/replace  */
-    int    item_comm; /* which one is it: set/add/replace */
-
-    /* data for the swallow state */
-    int    sbytes;    /* how many bytes to swallow */
-
-    /* data for the mwrite state */
-    struct iovec *iov;
-    int    iovsize;   /* number of elements allocated in iov[] */
-    int    iovused;   /* number of elements used in iov[] */
-
-    struct msghdr *msglist;
-    int    msgsize;   /* number of elements allocated in msglist[] */
-    int    msgused;   /* number of elements used in msglist[] */
-    int    msgcurr;   /* element in msglist[] being transmitted now */
-    int    msgbytes;  /* number of bytes in current msg */
-
-    item   **ilist;   /* list of items to write out */
-    int    isize;
-    item   **icurr;
-    int    ileft;
-
-    /* data for UDP clients */
-    int    udp;       /* 1 if this is a UDP "connection" */
-    int    request_id; /* Incoming UDP request ID, if this is a UDP "connection" */
-    struct sockaddr request_addr; /* Who sent the most recent request */
-    socklen_t request_addr_size;
-    unsigned char *hdrbuf; /* udp packet headers */
-    int    hdrsize;   /* number of headers' worth of space is allocated */
-
-    int    binary;    /* are we in binary mode */
-    int    bucket;    /* bucket number for the next command, if running as
-                         a managed instance. -1 (_not_ 0) means invalid. */
-    int    gen;       /* generation requested for the bucket */
-} conn;
-
 /* number of virtual buckets for a managed instance */
 #define MAX_BUCKETS 32768
 
@@ -173,46 +86,9 @@ extern volatile rel_time_t current_time;
 
 rel_time_t realtime(time_t exptime);
 
-/* slabs memory allocation */
-
-/* Init the subsystem. 1st argument is the limit on no. of bytes to allocate,
-   0 if no limit. 2nd argument is the growth factor; each slab will use a chunk
-   size equal to the previous slab's chunk size times this factor. */
-void slabs_init(size_t limit, double factor);
-
-/* Preallocate as many slab pages as possible (called from slabs_init)
-   on start-up, so users don't get confused out-of-memory errors when
-   they do have free (in-slab) space, but no space to make new slabs.
-   if maxslabs is 18 (POWER_LARGEST - POWER_SMALLEST + 1), then all
-   slab types can be made.  if max memory is less than 18 MB, only the
-   smaller ones will be made.  */
-void slabs_preallocate (unsigned int maxslabs);
-
-/* Given object size, return id to use when allocating/freeing memory for object */
-/* 0 means error: can't store such a large object */
-unsigned int slabs_clsid(size_t size);
-
-/* Allocate object of given length. 0 on error */
-void *slabs_alloc(size_t size);
-
-/* Free previously allocated object */
-void slabs_free(void *ptr, size_t size);
-
-/* Fill buffer with stats */
-char* slabs_stats(int *buflen);
-
-/* Request some slab be moved between classes
-  1 = success
-   0 = fail
-   -1 = tried. busy. send again shortly. */
-int slabs_reassign(unsigned char srcid, unsigned char dstid);
-
 /* event handling, network IO */
 //int event_handler(int fd, short which, void *arg);
 void event_handler(aeEventLoop *el, int fd, void *privdata, int mask);
-conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, int is_udp);
-void conn_close(conn *c);
-void conn_init(void);
 void drive_machine(conn *c);
 int new_socket(int isUdp);
 int server_socket(int port, int isUdp);
@@ -235,3 +111,5 @@ void settings_init(void);
 void set_current_time ();  /* update the global variable holding
                               global 32-bit seconds-since-start time
                               (to avoid 64 bit time_t) */
+
+#endif // end definition of MEMCACHED_H

@@ -20,6 +20,7 @@
 
 
 #define LARGEST_ID 255
+
 static item *heads[LARGEST_ID];
 static item *tails[LARGEST_ID];
 unsigned int sizes[LARGEST_ID];
@@ -46,7 +47,10 @@ void item_init(void) {
  */
 int item_make_header(char *key, int flags, int nbytes,
                      char *suffix, int *nsuffix, int *keylen) {
-    *keylen = strlen(key) + 1; if(*keylen % 4) *keylen += 4 - (*keylen % 4);
+    *keylen = strlen(key) + 1; 
+    if(*keylen % 4) {
+        *keylen += 4 - (*keylen % 4);
+    }
     *nsuffix = sprintf(suffix, " %u %u\r\n", flags, nbytes - 2);
     return sizeof(item) + *keylen + *nsuffix + nbytes;
 }

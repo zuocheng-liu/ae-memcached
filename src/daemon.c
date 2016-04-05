@@ -38,12 +38,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int
-daemon(nochdir, noclose)
-    int nochdir, noclose;
-{
+int daemon(int nochdir, int noclose) {
     int fd;
-
+    
     switch (fork()) {
     case -1:
         return (-1);

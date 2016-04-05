@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "memcached.h"
+#include "items.h"
 
 typedef  unsigned long  int  ub4;   /* unsigned 4-byte quantities */
 typedef  unsigned       char ub1;   /* unsigned 1-byte quantities */
