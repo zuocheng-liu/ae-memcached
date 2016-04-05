@@ -2,6 +2,7 @@
 #define ITEMS_H
 
 #include "config.h"
+#include "global.h"
 
 #define ITEM_LINKED 1
 #define ITEM_DELETED 2

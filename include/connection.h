@@ -1,7 +1,20 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
+
 #include "items.h"
+#include "global.h"
+
+enum conn_states {
+    conn_listening,  /* the socket which listens for connections */
+    conn_read,       /* reading in a command line */
+    conn_write,      /* writing out a simple response */
+    conn_nread,      /* reading in a fixed number of bytes */
+    conn_swallow,    /* swallowing unnecessary bytes w/o storing */
+    conn_closing,    /* closing this connection */
+    conn_mwrite      /* writing out many items sequentially */
+};
+
 
 typedef struct {
     int    sfd;

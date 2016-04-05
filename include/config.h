@@ -25,7 +25,4 @@
 #define IOV_LIST_HIGHWAT 600
 #define MSG_LIST_HIGHWAT 100
 
-/* Time relative to server start. Smaller than time_t on 64-bit systems. */
-typedef unsigned int rel_time_t;
-
 #endif // end definition of CONFIG_H
