@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* $Id$ */
-#include "ae.h"
-
 #define VERSION "1.2.0"
 #define PACKAGE "memached"
 #define DATA_BUFFER_SIZE 2048
@@ -27,6 +25,11 @@
 
 /* Time relative to server start. Smaller than time_t on 64-bit systems. */
 typedef unsigned int rel_time_t;
+
+#include "ae.h"
+#include "items.h"
+#include "assoc.h"
+
 
 struct stats {
     unsigned int  curr_items;
@@ -61,37 +64,6 @@ struct settings {
 
 extern struct stats stats;
 extern struct settings settings;
-
-#define ITEM_LINKED 1
-#define ITEM_DELETED 2
-
-/* temp */
-#define ITEM_SLABBED 4
-
-typedef struct _stritem {
-    struct _stritem *next;
-    struct _stritem *prev;
-    struct _stritem *h_next;    /* hash chain next */
-    rel_time_t      time;       /* least recent access */
-    rel_time_t      exptime;    /* expire time */
-    int             nbytes;     /* size of data */
-    unsigned short  refcount;
-    unsigned char   nsuffix;    /* length of flags-and-length string */
-    unsigned char   it_flags;   /* ITEM_* above */
-    unsigned char   slabs_clsid;/* which slab class we're in */
-    unsigned char   nkey;       /* key length, w/terminating null and padding */
-    void * end[0];
-    /* then null-terminated key */
-    /* then " flags length\r\n" (no terminating null) */
-    /* then data with terminating \r\n (no terminating null; it's binary!) */
-} item;
-
-#define ITEM_key(item) ((char*)&((item)->end[0]))
-
-/* warning: don't use these macros with a function, as it evals its arg twice */
-#define ITEM_suffix(item) ((char*) &((item)->end[0]) + (item)->nkey)
-#define ITEM_data(item) ((char*) &((item)->end[0]) + (item)->nkey + (item)->nsuffix)
-#define ITEM_ntotal(item) (sizeof(struct _stritem) + (item)->nkey + (item)->nsuffix + (item)->nbytes)
 
 enum conn_states {
     conn_listening,  /* the socket which listens for connections */
@@ -259,24 +231,6 @@ void stats_reset(void);
 void stats_init(void);
 /* defaults */
 void settings_init(void);
-/* associative array */
-void assoc_init(void);
-item *assoc_find(char *key);
-int assoc_insert(char *key, item *item);
-void assoc_delete(char *key);
-void item_init(void);
-item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes);
-void item_free(item *it);
-int item_size_ok(char *key, int flags, int nbytes);
-int item_link(item *it);    /* may fail if transgresses limits */
-void item_unlink(item *it);
-void item_remove(item *it);
-void item_update(item *it);   /* update LRU time to current and reposition */
-int item_replace(item *it, item *new_it);
-char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int *bytes);
-char *item_stats_sizes(int *bytes);
-void item_stats(char *buffer, int buflen);
-
 /* time handling */
 void set_current_time ();  /* update the global variable holding
                               global 32-bit seconds-since-start time

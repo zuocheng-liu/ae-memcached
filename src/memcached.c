@@ -2277,12 +2277,10 @@ int main (int argc, char **argv) {
         exit(1);
     }*/
     /* initialise clock event */
-    //clock_handler(0,0,0);
     aeCreateTimeEvent(g_el, 1000 * 1000, clock_handler, NULL, NULL);
     /* initialise deletion array and timer event */
     deltotal = 200; delcurr = 0;
     todelete = malloc(sizeof(item *)*deltotal);
-    //delete_handler(0,0,0); /* sets up the event */
     aeCreateTimeEvent(g_el, 1000 * 1000, delete_handler, NULL, NULL);
     /* save the PID in if we're a daemon */
     if (daemonize)
