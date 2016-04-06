@@ -41,5 +41,4 @@ struct settings {
 extern struct stats stats;
 extern struct settings settings;
 
-
 #endif // end definition of GLOBAL_H

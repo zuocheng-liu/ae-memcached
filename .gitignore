@@ -33,3 +33,6 @@
 
 # Index files
 tags
+
+# Memcached
+memcached

@@ -1189,7 +1189,6 @@ void drive_machine(conn *c) {
                 close(sfd);
                 break;
             }
-            //newc = conn_new(sfd, conn_read, EV_READ | EV_PERSIST,DATA_BUFFER_SIZE, 0);
             newc = conn_new(sfd, conn_read, AE_READABLE, DATA_BUFFER_SIZE, 0);
             if (!newc) {
                 if (settings.verbose > 0)
@@ -1208,7 +1207,6 @@ void drive_machine(conn *c) {
                 continue;
             }
             /* we have no command line and no data to read from network */
-            //if (!update_event(c, EV_READ | EV_PERSIST)) {
             if (!update_event(c, AE_READABLE)) {
                 if (settings.verbose > 0)
                     fprintf(stderr, "Couldn't update event\n");
@@ -1248,7 +1246,6 @@ void drive_machine(conn *c) {
                 break;
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-                //if (!update_event(c, EV_READ | EV_PERSIST)) {
                 if (!update_event(c, AE_READABLE)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
@@ -1292,7 +1289,6 @@ void drive_machine(conn *c) {
                 break;
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-                //if (!update_event(c, EV_READ | EV_PERSIST)) {
                 if (!update_event(c, AE_READABLE)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
@@ -1381,7 +1377,6 @@ void event_handler(aeEventLoop *el, int fd, void *privdata, int mask) {
     AE_NOTUSED(mask); 
 
     conn *c;
-    //c = (conn *)arg;
     c = (conn *)privdata;
     //c->which = which;
 
@@ -1587,24 +1582,7 @@ void set_current_time () {
     current_time = (rel_time_t) (time(0) - stats.started);
 }
 
-//void clock_handler(int fd, short which, void *arg) {
 int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
-    /*
-    struct timeval t;
-    static int initialized = 0;
-
-    if (initialized) {
-        // only delete the event if it's actually there.
-        evtimer_del(&clockevent);
-    } else {
-        initialized = 1;
-    }
-
-    evtimer_set(&clockevent, clock_handler, 0);
-    t.tv_sec = 1;
-    t.tv_usec = 0;
-    evtimer_add(&clockevent, &t);
-    */
     set_current_time();
     return 1000 * 1000;
 }
@@ -1797,7 +1775,8 @@ int main (int argc, char **argv) {
 
     /* init settings */
     settings_init();
-    
+
+    /* create AE event loop  */
     g_el = aeCreateEventLoop();
 
     /* set stderr non-buffering (for running under, say, daemontools) */
@@ -1990,7 +1969,6 @@ int main (int argc, char **argv) {
 
     /* initialize other stuff */
     item_init();
-    //event_init();
     stats_init();
     assoc_init();
     conn_init();
@@ -2024,7 +2002,6 @@ int main (int argc, char **argv) {
         exit(1);
     }
     /* create the initial listening connection */
-   //if (!(l_conn = conn_new(l_socket, conn_listening, EV_READ | EV_PERSIST, 1, 0))) {
     if (!(l_conn = conn_new(l_socket, conn_listening, AE_READABLE, 1, 0))) {
         fprintf(stderr, "failed to create listening connection");
         exit(1);
