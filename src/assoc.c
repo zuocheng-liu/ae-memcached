@@ -150,7 +150,6 @@ item *assoc_find(char *key) {
 
 /* returns the address of the item pointer before the key.  if *item == 0,
    the item wasn't found */
-
 static item** _hashitem_before (char *key) {
     ub4 hv = hash(key, strlen(key), 0) & hashmask(HASHPOWER);
     item **pos = &hashtable[hv];

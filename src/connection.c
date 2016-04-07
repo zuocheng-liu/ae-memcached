@@ -92,17 +92,15 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
     c->item = 0;
     c->bucket = -1;
     c->gen = 0;
-
-    //event_set(&c->event, sfd, event_flags, event_handler, (void *)c);
+    
     c->ev_flags = event_flags;
-
-    //if (event_add(&c->event, 0) == -1) {
     if (aeCreateFileEvent(g_el, sfd, event_flags, event_handler, (void *)c) == AE_ERR) {
         if (freecurr < freetotal) {
             freeconns[freecurr++] = c;
         } else {
-            if (c->hdrbuf)
+            if (c->hdrbuf) {
                 free (c->hdrbuf);
+            }
             free (c->msglist);
             free (c->rbuf);
             free (c->wbuf);
@@ -160,7 +158,6 @@ static void conn_free(conn *c) {
 
 void conn_close(conn *c) {
     /* delete the event, the socket and the conn */
-    //event_del(&c->event);
     aeDeleteFileEvent(g_el, c->sfd, AE_READABLE); 
     aeDeleteFileEvent(g_el, c->sfd, AE_WRITABLE);
     if (settings.verbose > 1)
@@ -187,7 +184,7 @@ void conn_close(conn *c) {
         }
     }
 
-    stats.curr_conns--;
+    -- stats.curr_conns;
 
     return;
 }

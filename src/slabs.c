@@ -22,36 +22,9 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include <event.h>
 #include <assert.h>
 
 #include "memcached.h"
-
-#define POWER_SMALLEST 1
-#define POWER_LARGEST  200
-#define POWER_BLOCK 1048576
-#define CHUNK_ALIGN_BYTES (sizeof(void *))
-
-/* powers-of-N allocation structures */
-
-typedef struct {
-    unsigned int size;      /* sizes of items */
-    unsigned int perslab;   /* how many items per slab */
-
-    void **slots;           /* list of item ptrs */
-    unsigned int sl_total;  /* size of previous array */
-    unsigned int sl_curr;   /* first free slot */
-
-    void *end_page_ptr;         /* pointer to next free item at end of page, or 0 */
-    unsigned int end_page_free; /* number of items remaining at end of last alloced page */
-
-    unsigned int slabs;     /* how many slabs were allocated for this class */
-
-    void **slab_list;       /* array of slab pointers */
-    unsigned int list_size; /* size of prev array */
-
-    unsigned int killing;  /* index+1 of dying slab, or zero if none */
-} slabclass_t;
 
 static slabclass_t slabclass[POWER_LARGEST+1];
 static size_t mem_limit = 0;
