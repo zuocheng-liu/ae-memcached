@@ -86,4 +86,6 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, i
 void conn_close(conn *c);
 void conn_init(void);
 
+void out_string(conn *c, char *str);
+
 #endif // end definition of CONNECTION_H

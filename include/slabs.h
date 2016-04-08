@@ -62,4 +62,4 @@ char* slabs_stats(int *buflen);
  -1 = tried. busy. send again shortly. */
 int slabs_reassign(unsigned char srcid, unsigned char dstid);
 
-#endif // end define SLABS_H
+#endif /* End definition SLABS_H */

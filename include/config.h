@@ -2,8 +2,6 @@
 #define CONFIG_H
 
 
-#define VERSION "1.2.0"
-#define PACKAGE "memached"
 #define DATA_BUFFER_SIZE 2048
 #define UDP_READ_BUFFER_SIZE 65536
 #define UDP_MAX_PAYLOAD_SIZE 1400
@@ -25,4 +23,12 @@
 #define IOV_LIST_HIGHWAT 600
 #define MSG_LIST_HIGHWAT 100
 
-#endif // end definition of CONFIG_H
+#ifndef NDEBUG
+/* 
+ * #define NDEBUG
+ */
+#endif
+
+
+
+#endif /* End definition of CONFIG_H */

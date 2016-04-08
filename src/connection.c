@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ae.h"
 #include "connection.h"
 #include "memcached.h"
-
-extern struct stats stats;
-extern aeEventLoop *g_el;
 
 static conn **freeconns;
 static int freetotal;
@@ -247,4 +245,25 @@ void conn_set_state(conn *c, int state) {
     }
 }
 
+void out_string(conn *c, char *str) {
+    int len;
+
+    LOG_DEBUG_F2(">%d %s\n", c->sfd, str);
+
+    len = strlen(str);
+    if (len + 2 > c->wsize) {
+        /* ought to be always enough. just fail for simplicity */
+        str = "SERVER_ERROR output line too long";
+        len = strlen(str);
+    }
+
+    strcpy(c->wbuf, str);
+    strcpy(c->wbuf + len, "\r\n");
+    c->wbytes = len + 2;
+    c->wcurr = c->wbuf;
+
+    conn_set_state(c, conn_write);
+    c->write_and_go = conn_read;
+    return;
+}
 

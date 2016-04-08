@@ -61,11 +61,4 @@ int add_msghdr(conn *c);
 /* stats */
 void stats_reset(void);
 void stats_init(void);
-/* defaults */
-void settings_init(void);
-/* time handling */
-void set_current_time ();  /* update the global variable holding
-                              global 32-bit seconds-since-start time
-                              (to avoid 64 bit time_t) */
-
-#endif // end definition of MEMCACHED_H
+#endif /* end definition of MEMCACHED_H */

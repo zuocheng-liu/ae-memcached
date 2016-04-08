@@ -50,4 +50,4 @@ char *item_stats_sizes(int *bytes);
 void item_stats(char *buffer, int buflen);
 
 
-#endif // end define ITEMS_H
+#endif /* End definition of ITEMS_H */

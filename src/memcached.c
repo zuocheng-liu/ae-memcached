@@ -33,9 +33,6 @@
 #include <pwd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -55,13 +52,10 @@
 #include "assoc.h"
 #include "memcached.h"
 
-struct stats stats;
-struct settings settings;
-
 static item **todelete = 0;
 static int delcurr;
 static int deltotal;
-struct aeEventLoop *g_el;
+
 
 #define TRANSMIT_COMPLETE   0
 #define TRANSMIT_INCOMPLETE 1
@@ -98,21 +92,6 @@ void stats_reset(void) {
     stats.total_items = stats.total_conns = 0;
     stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
     stats.bytes_read = stats.bytes_written = 0;
-}
-
-void settings_init(void) {
-    settings.port = 11211;
-    settings.udpport = 0;
-    settings.interface.s_addr = htonl(INADDR_ANY);
-    settings.maxbytes = 64*1024*1024; /* default is 64MB */
-    settings.maxconns = 1024;         /* to limit connections-related memory to about 5MB */
-    settings.verbose = 0;
-    settings.oldest_live = 0;
-    settings.evict_to_free = 1;       /* push old items out of cache when memory runs out */
-    settings.socketpath = NULL;       /* by default, not using a unix socket */
-    settings.managed = 0;
-    settings.factor = 1.25;
-    settings.chunk_size = 48;         /* space for a modest key and value */
 }
 
 /* returns true if a deleted item's delete-locked-time is over, and it
@@ -310,27 +289,6 @@ int build_udp_headers(conn *c) {
 }
 
 
-void out_string(conn *c, char *str) {
-    int len;
-
-    LOG_DEBUG_F2(">%d %s\n", c->sfd, str);
-
-    len = strlen(str);
-    if (len + 2 > c->wsize) {
-        /* ought to be always enough. just fail for simplicity */
-        str = "SERVER_ERROR output line too long";
-        len = strlen(str);
-    }
-
-    strcpy(c->wbuf, str);
-    strcpy(c->wbuf + len, "\r\n");
-    c->wbytes = len + 2;
-    c->wcurr = c->wbuf;
-
-    conn_set_state(c, conn_write);
-    c->write_and_go = conn_read;
-    return;
-}
 
 /*
  * we get here after reading the value in set/add/replace commands. The command
@@ -1549,29 +1507,11 @@ void pre_gdb () {
     kill(getpid(), SIGABRT);
 }
 
-/*
- * We keep the current time of day in a global variable that's updated by a
- * timer event. This saves us a bunch of time() system calls (we really only
- * need to get the time once a second, whereas there can be tens of thousands
- * of requests a second) and allows us to use server-start-relative timestamps
- * rather than absolute UNIX timestamps, a space savings on systems where
- * sizeof(time_t) > sizeof(unsigned int).
- */
-volatile rel_time_t current_time;
-
-/* time-sensitive callers can call it by hand with this, outside the normal ever-1-second timer */
-void set_current_time () {
-    current_time = (rel_time_t) (time(0) - stats.started);
-}
-
 int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     set_current_time();
     return 1000;
 }
 
-//struct event deleteevent;
-
-//void delete_handler(int fd, short which, void *arg) {
 int delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     int i, j=0;
     rel_time_t now = current_time;
@@ -1982,13 +1922,15 @@ int main (int argc, char **argv) {
     todelete = malloc(sizeof(item *)*deltotal);
     aeCreateTimeEvent(g_el, 1000, delete_handler, NULL, NULL);
     /* save the PID in if we're a daemon */
-    if (daemonize)
+    if (daemonize) {
         save_pid(getpid(),pid_file);
+    }
     /* enter the loop */
     aeMain(g_el);
     aeDeleteEventLoop(g_el);
     /* remove the PID file if we're a daemon */
-    if (daemonize)
+    if (daemonize) {
         remove_pidfile(pid_file);
+    }
     return 0;
 }
