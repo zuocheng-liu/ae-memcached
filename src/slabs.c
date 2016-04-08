@@ -38,11 +38,17 @@ static int power_largest;
 unsigned int slabs_clsid(size_t size) {
     int res = POWER_SMALLEST;
 
-    if(size==0)
+    if(0 == size) {
         return 0;
-    while (size > slabclass[res].size)
-        if (res++ == power_largest)     /* won't fit in the biggest slab */
+    }
+
+    while (size > slabclass[res].size) {
+        /* won't fit in the biggest slab */
+        if (res == power_largest) {
             return 0;
+        }
+        ++ res;
+    }
     return res;
 }
 
@@ -55,35 +61,36 @@ void slabs_init(size_t limit, double factor) {
     unsigned int size = sizeof(item) + settings.chunk_size;
 
     /* Factor of 2.0 means use the default memcached behavior */
-    if (factor == 2.0 && size < 128)
+    if (factor == 2.0 && size < 128) {
         size = 128;
+    }
 
     mem_limit = limit;
     memset(slabclass, 0, sizeof(slabclass));
 
     while (++i < POWER_LARGEST && size <= POWER_BLOCK / 2) {
         /* Make sure items are always n-byte aligned */
-        if (size % CHUNK_ALIGN_BYTES)
+        if (size % CHUNK_ALIGN_BYTES) {
             size += CHUNK_ALIGN_BYTES - (size % CHUNK_ALIGN_BYTES);
-
+        }
         slabclass[i].size = size;
         slabclass[i].perslab = POWER_BLOCK / slabclass[i].size;
         size *= factor;
-        if (settings.verbose > 1) {
-            fprintf(stderr, "slab class %3d: chunk size %6d perslab %5d\n",
+        LOG_DEBUG_F3("slab class %3d: chunk size %6d perslab %5d\n",
                     i, slabclass[i].size, slabclass[i].perslab);
-        }
     }
 
     power_largest = i;
     slabclass[power_largest].size = POWER_BLOCK;
     slabclass[power_largest].perslab = 1;
+    LOG_DEBUG_F3("slab class %3d: chunk size %6d perslab %5d\n",
+                i, slabclass[i].size, slabclass[i].perslab);
 
     /* for the test suite:  faking of how much we've already malloc'd */
     {
         char *t_initial_malloc = getenv("T_MEMD_INITIAL_MALLOC");
         if (t_initial_malloc) {
-            mem_malloced = atol(getenv("T_MEMD_INITIAL_MALLOC"));
+            mem_malloced = (size_t)atol(t_initial_malloc);
         }
 
     }

@@ -313,8 +313,7 @@ int build_udp_headers(conn *c) {
 void out_string(conn *c, char *str) {
     int len;
 
-    if (settings.verbose > 1)
-        fprintf(stderr, ">%d %s\n", c->sfd, str);
+    LOG_DEBUG_F2(">%d %s\n", c->sfd, str);
 
     len = strlen(str);
     if (len + 2 > c->wsize) {
@@ -573,9 +572,7 @@ void process_command(conn *c, char *command) {
      * directly into it, then continue in nread_complete().
      */
 
-    if (settings.verbose > 1)
-        fprintf(stderr, "<%d %s\n", c->sfd, command);
-
+    LOG_DEBUG_F2("<%d %s\n", c->sfd, command);
     c->msgcurr = 0;
     c->msgused = 0;
     c->iovused = 0;
@@ -751,8 +748,8 @@ void process_command(conn *c, char *command) {
                 {
                     break;
                 }
-                if (settings.verbose > 1)
-                    fprintf(stderr, ">%d sending key %s\n", c->sfd, ITEM_key(it));
+                
+                LOG_DEBUG_F2(">%d sending key %s\n", c->sfd, ITEM_key(it));
 
                 stats.get_hits++;
                 it->refcount++;
@@ -765,8 +762,7 @@ void process_command(conn *c, char *command) {
         c->icurr = c->ilist;
         c->ileft = i;
 
-        if (settings.verbose > 1)
-            fprintf(stderr, ">%d END\n", c->sfd);
+        LOG_DEBUG_F1(">%d END\n", c->sfd);
         add_iov(c, "END\r\n", 5);
 
         if (c->udp && build_udp_headers(c)) {
@@ -1044,8 +1040,7 @@ int try_read_network(conn *c) {
         if (c->rbytes >= c->rsize) {
             char *new_rbuf = realloc(c->rbuf, c->rsize*2);
             if (!new_rbuf) {
-                if (settings.verbose > 0)
-                    fprintf(stderr, "Couldn't realloc input buffer\n");
+                LOG_INFO("Couldn't realloc input buffer\n");
                 c->rbytes = 0; /* ignore what we read */
                 out_string(c, "SERVER_ERROR out of memory");
                 c->write_and_go = conn_closing;
@@ -1139,8 +1134,7 @@ int transmit(conn *c) {
         if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             //if (!update_event(c, EV_WRITE | EV_PERSIST)) {
             if (!update_event(c, AE_WRITABLE)) {
-                if (settings.verbose > 0)
-                    fprintf(stderr, "Couldn't update event\n");
+                LOG_INFO("Couldn't update event\n");
                 conn_set_state(c, conn_closing);
                 return TRANSMIT_HARD_ERROR;
             }
@@ -1148,8 +1142,7 @@ int transmit(conn *c) {
         }
         /* if res==0 or res==-1 and error is not EAGAIN or EWOULDBLOCK,
            we have a real error, on which we close the connection */
-        if (settings.verbose > 0)
-            perror("Failed to write, and not due to blocking");
+        LOG_INFO("Failed to write, and not due to blocking\n");
 
         if (c->udp)
             conn_set_state(c, conn_read);
@@ -1191,8 +1184,7 @@ void drive_machine(conn *c) {
             }
             newc = conn_new(sfd, conn_read, AE_READABLE, DATA_BUFFER_SIZE, 0);
             if (!newc) {
-                if (settings.verbose > 0)
-                    fprintf(stderr, "couldn't create new connection\n");
+                LOG_INFO("Couldn't create new connection\n");
                 close(sfd);
                 break;
             }
@@ -1208,8 +1200,7 @@ void drive_machine(conn *c) {
             }
             /* we have no command line and no data to read from network */
             if (!update_event(c, AE_READABLE)) {
-                if (settings.verbose > 0)
-                    fprintf(stderr, "Couldn't update event\n");
+                LOG_INFO("Couldn't update event\n");
                 conn_set_state(c, conn_closing);
                 break;
             }
@@ -1247,8 +1238,7 @@ void drive_machine(conn *c) {
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 if (!update_event(c, AE_READABLE)) {
-                    if (settings.verbose > 0)
-                        fprintf(stderr, "Couldn't update event\n");
+                    LOG_INFO("Couldn't update event\n");
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -1256,8 +1246,7 @@ void drive_machine(conn *c) {
                 break;
             }
             /* otherwise we have a real error, on which we close the connection */
-            if (settings.verbose > 0)
-                fprintf(stderr, "Failed to read, and not due to blocking\n");
+            LOG_INFO("Failed to read, and not due to blocking\n");
             conn_set_state(c, conn_closing);
             break;
 
@@ -1290,8 +1279,7 @@ void drive_machine(conn *c) {
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 if (!update_event(c, AE_READABLE)) {
-                    if (settings.verbose > 0)
-                        fprintf(stderr, "Couldn't update event\n");
+                    LOG_INFO("Couldn't update event\n");
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -1299,8 +1287,7 @@ void drive_machine(conn *c) {
                 break;
             }
             /* otherwise we have a real error, on which we close the connection */
-            if (settings.verbose > 0)
-                fprintf(stderr, "Failed to read, and not due to blocking\n");
+            LOG_INFO("Failed to read, and not due to blocking\n");
             conn_set_state(c, conn_closing);
             break;
 
@@ -1313,8 +1300,7 @@ void drive_machine(conn *c) {
             if (c->iovused == 0) {
                 if (add_iov(c, c->wcurr, c->wbytes) ||
                         c->udp && build_udp_headers(c)) {
-                    if (settings.verbose > 0)
-                        fprintf(stderr, "Couldn't build response\n");
+                    LOG_INFO("Couldn't build response\n");
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -1341,8 +1327,7 @@ void drive_machine(conn *c) {
                     }
                     conn_set_state(c, c->write_and_go);
                 } else {
-                    if (settings.verbose > 0)
-                        fprintf(stderr, "Unexpected state %d\n", c->state);
+                    LOG_INFO_F1("Unexpected state %d\n", c->state);
                     conn_set_state(c, conn_closing);
                 }
                 break;
@@ -1382,8 +1367,7 @@ void event_handler(aeEventLoop *el, int fd, void *privdata, int mask) {
 
     /* sanity */
     if (fd != c->sfd) {
-        if (settings.verbose > 0)
-            fprintf(stderr, "Catastrophic: event fd doesn't match conn fd!\n");
+        LOG_INFO("Catastrophic: event fd doesn't match conn fd!\n");
         conn_close(c);
         return;
     }
@@ -1444,8 +1428,7 @@ void maximize_sndbuf(int sfd) {
         }
     }
 
-    if (settings.verbose > 1)
-        fprintf(stderr, "<%d send buffer was %d, now %d\n", sfd, old_size, last_good);
+    LOG_DEBUG_F3("<%d send buffer was %d, now %d\n", sfd, old_size, last_good);
 }
 
 
@@ -1575,7 +1558,6 @@ void pre_gdb () {
  * sizeof(time_t) > sizeof(unsigned int).
  */
 volatile rel_time_t current_time;
-//struct event clockevent;
 
 /* time-sensitive callers can call it by hand with this, outside the normal ever-1-second timer */
 void set_current_time () {
@@ -1584,47 +1566,28 @@ void set_current_time () {
 
 int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     set_current_time();
-    return 1000 * 1000;
+    return 1000;
 }
 
 //struct event deleteevent;
 
 //void delete_handler(int fd, short which, void *arg) {
 int delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
-    /*
-    struct timeval t;
-    static int initialized = 0;
-    */
-    /*
-    if (initialized) {
-         some versions of libevent don't like deleting events that don't exist,
-           so only delete once we know this event has been added. 
-        evtimer_del(&deleteevent);
-    } else {
-        initialized = 1;
-    }
-
-    evtimer_set(&deleteevent, delete_handler, 0);
-    t.tv_sec = 5; t.tv_usec=0;
-    evtimer_add(&deleteevent, &t);
-    */
-    {
-        int i, j=0;
-        rel_time_t now = current_time;
-        for (i=0; i<delcurr; i++) {
-            item *it = todelete[i];
-            if (item_delete_lock_over(it)) {
-                assert(it->refcount > 0);
-                it->it_flags &= ~ITEM_DELETED;
-                item_unlink(it);
-                item_remove(it);
-            } else {
-                todelete[j++] = it;
-            }
+    int i, j=0;
+    rel_time_t now = current_time;
+    for (i=0; i<delcurr; i++) {
+        item *it = todelete[i];
+        if (item_delete_lock_over(it)) {
+            assert(it->refcount > 0);
+            it->it_flags &= ~ITEM_DELETED;
+            item_unlink(it);
+            item_remove(it);
+        } else {
+            todelete[j++] = it;
         }
-        delcurr = j;
     }
-    return 1000 * 1000;
+    delcurr = j;
+    return 1000;
 }
 
 void usage(void) {
@@ -2013,11 +1976,11 @@ int main (int argc, char **argv) {
         exit(1);
     }*/
     /* initialise clock event */
-    aeCreateTimeEvent(g_el, 1000 * 1000, clock_handler, NULL, NULL);
+    aeCreateTimeEvent(g_el, 1000, clock_handler, NULL, NULL);
     /* initialise deletion array and timer event */
     deltotal = 200; delcurr = 0;
     todelete = malloc(sizeof(item *)*deltotal);
-    aeCreateTimeEvent(g_el, 1000 * 1000, delete_handler, NULL, NULL);
+    aeCreateTimeEvent(g_el, 1000, delete_handler, NULL, NULL);
     /* save the PID in if we're a daemon */
     if (daemonize)
         save_pid(getpid(),pid_file);

@@ -4,6 +4,10 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#ifndef NDEBUG
+#define NDEBUG
+#endif
+
 /* Time relative to server start. Smaller than time_t on 64-bit systems. */
 typedef unsigned int rel_time_t;
 
@@ -40,5 +44,67 @@ struct settings {
 
 extern struct stats stats;
 extern struct settings settings;
+
+/*
+ * Macro functions
+ */
+
+#define LOG_DEBUG(format) LOG_DEBUG_F0(format) 
+#define LOG_DEBUG_F0(format)                                 \
+    do {                                                    \
+        if (settings.verbose > 1) {                         \
+            fprintf(stderr, format);                        \
+        }                                                   \
+    } while (0)
+#define LOG_DEBUG_F1(format, arg0)                           \
+    do {                                                    \
+        if (settings.verbose > 1) {                         \
+            fprintf(stderr, format, arg0);                  \
+        }                                                   \
+    } while (0)
+#define LOG_DEBUG_F2(format, arg0, arg1)                     \
+    do {                                                    \
+        if (settings.verbose > 1) {                         \
+            fprintf(stderr, format, arg0, arg1);            \
+        }                                                   \
+    } while (0)
+#define LOG_DEBUG_F3(format, arg0, arg1, arg2)               \
+    do {                                                    \
+        if (settings.verbose > 1) {                         \
+            fprintf(stderr, format, arg0, arg1, arg2);      \
+        }                                                   \
+    } while (0)
+
+#define LOG_INFO(format) LOG_INFO_F0(format) 
+#define LOG_INFO_F0(format)                                 \
+    do {                                                    \
+        if (settings.verbose > 0) {                         \
+            fprintf(stderr, format);                        \
+        }                                                   \
+    } while (0)
+#define LOG_INFO_F1(format, arg0)                           \
+    do {                                                    \
+        if (settings.verbose > 0) {                         \
+            fprintf(stderr, format, arg0);                  \
+        }                                                   \
+    } while (0)
+#define LOG_INFO_F2(format, arg0, arg1)                     \
+    do {                                                    \
+        if (settings.verbose > 0) {                         \
+            fprintf(stderr, format, arg0, arg1);            \
+        }                                                   \
+    } while (0)
+#define LOG_INFO_F3(format, arg0, arg1, arg2)               \
+    do {                                                    \
+        if (settings.verbose > 0) {                         \
+            fprintf(stderr, format, arg0, arg1, arg2);      \
+        }                                                   \
+    } while (0)
+#define LOG_INFO_F4(format, arg0, arg1, arg2, arg3)         \
+    do {                                                    \
+        if (settings.verbose > 0) {                         \
+            fprintf(stderr, format, arg0 ,arg1, arg2, arg3);\
+        }                                                   \
+    } while (0)
 
 #endif // end definition of GLOBAL_H

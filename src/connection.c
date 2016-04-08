@@ -7,9 +7,9 @@
 extern struct stats stats;
 extern aeEventLoop *g_el;
 
-conn **freeconns;
-int freetotal;
-int freecurr;
+static conn **freeconns;
+static int freetotal;
+static int freecurr;
 
 void conn_init(void) {
     freetotal = 200;
