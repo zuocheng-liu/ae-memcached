@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "ae.h"
+#include "command.h"
 
 #define VERSION "1.2.0"
 #define PACKAGE "ae-memached"
@@ -51,6 +52,8 @@ struct settings {
  */
 extern struct stats stats;
 extern struct settings settings;
+extern struct aeEventLoop *g_el;
+extern command_service_ptr g_cmd_srv;
 
 /*
  * We keep the current time of day in a global variable that's updated by a

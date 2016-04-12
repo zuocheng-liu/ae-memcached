@@ -914,6 +914,10 @@ void process_command(conn *c, char *command) {
         return;
     }
 
+    if(command_service_run(g_cmd_srv, command, 1, (char **)c) < 0) {
+        LOG_DEBUG("ERROR no cmd");
+        out_string(c, "ERROR");
+    }
     out_string(c, "ERROR");
     return;
 }
@@ -1040,10 +1044,7 @@ int try_read_network(conn *c) {
 int update_event(conn *c, int new_flags) {
     if (c->ev_flags == new_flags)
         return 1;
-    //if (event_del(&c->event) == -1) return 0;
-    //event_set(&c->event, c->sfd, new_flags, event_handler, (void *)c);
     c->ev_flags = new_flags;
-    //if (event_add(&c->event, 0) == -1) return 0;
     if(aeCreateFileEvent(g_el, c->sfd, AE_READABLE, event_handler, (void *)c) == AE_ERR) {
         return 0;
     }
@@ -1314,7 +1315,6 @@ void drive_machine(conn *c) {
     return;
 }
 
-//void event_handler(int fd, short which, void *arg) {
 void event_handler(aeEventLoop *el, int fd, void *privdata, int mask) {
     AE_NOTUSED(el); 
     AE_NOTUSED(mask); 
@@ -1659,6 +1659,12 @@ void sig_handler(int sig) {
     exit(0);
 }
 
+u_int32_t hello_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    out_string(c, "world");
+    return 0;
+}
+
 int main (int argc, char **argv) {
     int c;
     conn *l_conn;
@@ -1682,6 +1688,9 @@ int main (int argc, char **argv) {
     /* create AE event loop  */
     g_el = aeCreateEventLoop();
 
+    /* create command service */
+    g_cmd_srv = command_service_create();
+    command_service_register_handler(g_cmd_srv, "hello", 5, hello_handler);
     /* set stderr non-buffering (for running under, say, daemontools) */
     setbuf(stderr, NULL);
 
@@ -1928,6 +1937,10 @@ int main (int argc, char **argv) {
     /* enter the loop */
     aeMain(g_el);
     aeDeleteEventLoop(g_el);
+    
+    /* destory command service */
+    command_service_destory(g_cmd_srv);
+
     /* remove the PID file if we're a daemon */
     if (daemonize) {
         remove_pidfile(pid_file);
