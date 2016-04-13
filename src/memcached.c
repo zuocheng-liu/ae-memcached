@@ -351,41 +351,8 @@ err:
 }
 
 void process_stat(conn *c, char *command) {
-    rel_time_t now = current_time;
-
-    if (strcmp(command, "stats") == 0) {
-        char temp[1024];
-        pid_t pid = getpid();
-        char *pos = temp;
-        struct rusage usage;
-
-        getrusage(RUSAGE_SELF, &usage);
-
-        pos += sprintf(pos, "STAT pid %u\r\n", pid);
-        pos += sprintf(pos, "STAT uptime %u\r\n", now);
-        pos += sprintf(pos, "STAT time %ld\r\n", now + stats.started);
-        pos += sprintf(pos, "STAT version " VERSION "\r\n");
-        pos += sprintf(pos, "STAT pointer_size %ld\r\n", 8 * sizeof(void*));
-        pos += sprintf(pos, "STAT rusage_user %ld.%06ld\r\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
-        pos += sprintf(pos, "STAT rusage_system %ld.%06ld\r\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
-        pos += sprintf(pos, "STAT curr_items %u\r\n", stats.curr_items);
-        pos += sprintf(pos, "STAT total_items %u\r\n", stats.total_items);
-        pos += sprintf(pos, "STAT bytes %llu\r\n", stats.curr_bytes);
-        pos += sprintf(pos, "STAT curr_connections %u\r\n", stats.curr_conns - 1); /* ignore listening conn */
-        pos += sprintf(pos, "STAT total_connections %u\r\n", stats.total_conns);
-        pos += sprintf(pos, "STAT connection_structures %u\r\n", stats.conn_structs);
-        pos += sprintf(pos, "STAT cmd_get %llu\r\n", stats.get_cmds);
-        pos += sprintf(pos, "STAT cmd_set %llu\r\n", stats.set_cmds);
-        pos += sprintf(pos, "STAT get_hits %llu\r\n", stats.get_hits);
-        pos += sprintf(pos, "STAT get_misses %llu\r\n", stats.get_misses);
-        pos += sprintf(pos, "STAT bytes_read %llu\r\n", stats.bytes_read);
-        pos += sprintf(pos, "STAT bytes_written %llu\r\n", stats.bytes_written);
-        pos += sprintf(pos, "STAT limit_maxbytes %llu\r\n", (unsigned long long) settings.maxbytes);
-        pos += sprintf(pos, "END");
-        out_string(c, temp);
-        return;
-    }
-
+    
+    LOG_DEBUG("process_stat");
     if (strcmp(command, "stats reset") == 0) {
         stats_reset();
         out_string(c, "RESET");
@@ -852,8 +819,8 @@ void process_command(conn *c, char *command) {
     }
 
     if (strncmp(command, "stats", 5) == 0) {
-        process_stat(c, command);
-        return;
+        //process_stat(c, command);
+        //return;
     }
 
     if (strncmp(command, "flush_all", 9) == 0) {
@@ -913,12 +880,9 @@ void process_command(conn *c, char *command) {
 #endif
         return;
     }
-
     if(command_service_run(g_cmd_srv, command, 1, (char **)c) < 0) {
-        LOG_DEBUG("ERROR no cmd");
         out_string(c, "ERROR");
     }
-    out_string(c, "ERROR");
     return;
 }
 
@@ -1091,7 +1055,6 @@ int transmit(conn *c) {
             return TRANSMIT_INCOMPLETE;
         }
         if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            //if (!update_event(c, EV_WRITE | EV_PERSIST)) {
             if (!update_event(c, AE_WRITABLE)) {
                 LOG_INFO("Couldn't update event\n");
                 conn_set_state(c, conn_closing);
@@ -1659,10 +1622,40 @@ void sig_handler(int sig) {
     exit(0);
 }
 
-u_int32_t hello_handler(char *cmd_s, int argc, char ** argv) {
+u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
     conn *c = (conn*)argv;
-    out_string(c, "world");
-    return 0;
+    rel_time_t now = current_time;
+    LOG_DEBUG("stats_handler");
+    char temp[1024];
+    pid_t pid = getpid();
+    char *pos = temp;
+    struct rusage usage;
+
+    getrusage(RUSAGE_SELF, &usage);
+
+    pos += sprintf(pos, "STAT pid %u\r\n", pid);
+    pos += sprintf(pos, "STAT uptime %u\r\n", now);
+    pos += sprintf(pos, "STAT time %ld\r\n", now + stats.started);
+    pos += sprintf(pos, "STAT version " VERSION "\r\n");
+    pos += sprintf(pos, "STAT pointer_size %ld\r\n", 8 * sizeof(void*));
+    pos += sprintf(pos, "STAT rusage_user %ld.%06ld\r\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+    pos += sprintf(pos, "STAT rusage_system %ld.%06ld\r\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+    pos += sprintf(pos, "STAT curr_items %u\r\n", stats.curr_items);
+    pos += sprintf(pos, "STAT total_items %u\r\n", stats.total_items);
+    pos += sprintf(pos, "STAT bytes %llu\r\n", stats.curr_bytes);
+    pos += sprintf(pos, "STAT curr_connections %u\r\n", stats.curr_conns - 1); /* ignore listening conn */
+    pos += sprintf(pos, "STAT total_connections %u\r\n", stats.total_conns);
+    pos += sprintf(pos, "STAT connection_structures %u\r\n", stats.conn_structs);
+    pos += sprintf(pos, "STAT cmd_get %llu\r\n", stats.get_cmds);
+    pos += sprintf(pos, "STAT cmd_set %llu\r\n", stats.set_cmds);
+    pos += sprintf(pos, "STAT get_hits %llu\r\n", stats.get_hits);
+    pos += sprintf(pos, "STAT get_misses %llu\r\n", stats.get_misses);
+    pos += sprintf(pos, "STAT bytes_read %llu\r\n", stats.bytes_read);
+    pos += sprintf(pos, "STAT bytes_written %llu\r\n", stats.bytes_written);
+    pos += sprintf(pos, "STAT limit_maxbytes %llu\r\n", (unsigned long long) settings.maxbytes);
+    pos += sprintf(pos, "END");
+    out_string(c, temp);
+    return COMMAND_OK;
 }
 
 int main (int argc, char **argv) {
@@ -1678,22 +1671,20 @@ int main (int argc, char **argv) {
     struct sigaction sa;
     struct rlimit rlim;
     char *pid_file = NULL;
+    
+    /* set stderr non-buffering (for running under, say, daemontools) */
+    setbuf(stderr, NULL);
 
     /* handle SIGINT */
     signal(SIGINT, sig_handler);
 
     /* init settings */
     settings_init();
-
+    
     /* create AE event loop  */
     g_el = aeCreateEventLoop();
 
-    /* create command service */
-    g_cmd_srv = command_service_create();
-    command_service_register_handler(g_cmd_srv, "hello", 5, hello_handler);
-    /* set stderr non-buffering (for running under, say, daemontools) */
-    setbuf(stderr, NULL);
-
+     
     /* process arguments */
     while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:s:")) != -1) {
         switch (c) {
@@ -1930,6 +1921,11 @@ int main (int argc, char **argv) {
     deltotal = 200; delcurr = 0;
     todelete = malloc(sizeof(item *)*deltotal);
     aeCreateTimeEvent(g_el, 1000, delete_handler, NULL, NULL);
+    
+    /* create command service */
+    g_cmd_srv = command_service_create();
+    command_service_register_handler(g_cmd_srv, "stats", 5, FULL_MATCH, stats_handler);
+
     /* save the PID in if we're a daemon */
     if (daemonize) {
         save_pid(getpid(),pid_file);

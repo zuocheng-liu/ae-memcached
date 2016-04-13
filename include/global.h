@@ -109,6 +109,13 @@ extern struct aeEventLoop *g_el;
             LOG_PRINT_F3(format, arg0, arg1, arg2);         \
         }                                                   \
     } while (0)
+#define LOG_DEBUG_F4(format, arg0, arg1, arg2, arg3)        \
+    do {                                                    \
+        if (settings.verbose > 1) {                         \
+            LOG_PRINT_F4(format, arg0, arg1, arg2, arg3);   \
+        }                                                   \
+    } while (0)
+
 
 #define LOG_INFO(format) LOG_INFO_F0(format) 
 #define LOG_INFO_F0(format)                                 \
@@ -163,7 +170,7 @@ extern struct aeEventLoop *g_el;
     } while (0)
 
 
-#define LOG_FATAL(format) LOG_FETAL_F0(format) 
+#define LOG_FATAL(format) LOG_FATAL_F0(format) 
 #define LOG_FATAL_F0(format)                                \
     do {                                                    \
         LOG_PRINT_F0(format);                                  \
