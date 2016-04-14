@@ -21,6 +21,7 @@ struct stats {
 /* global variables */
 extern struct stats stats;
 
+/* functions */
 void stats_init(void);
 void stats_reset(void);
 #endif /* End definition STATS_H */

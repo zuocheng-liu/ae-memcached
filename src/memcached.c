@@ -332,141 +332,184 @@ err:
      return;
 }
 
-void process_stat(conn *c, char *command) {
-    
-    LOG_DEBUG("process_stat");
-    if (strcmp(command, "stats reset") == 0) {
-        stats_reset();
-        out_string(c, "RESET");
-        return;
-    }
+u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    rel_time_t now = current_time;
+    LOG_DEBUG("stats_handler");
+    char temp[1024];
+    pid_t pid = getpid();
+    char *pos = temp;
+    struct rusage usage;
 
+    getrusage(RUSAGE_SELF, &usage);
+
+    pos += sprintf(pos, "STAT pid %u\r\n", pid);
+    pos += sprintf(pos, "STAT uptime %u\r\n", now);
+    pos += sprintf(pos, "STAT time %ld\r\n", now + stats.started);
+    pos += sprintf(pos, "STAT version " VERSION "\r\n");
+    pos += sprintf(pos, "STAT pointer_size %ld\r\n", 8 * sizeof(void*));
+    pos += sprintf(pos, "STAT rusage_user %ld.%06ld\r\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+    pos += sprintf(pos, "STAT rusage_system %ld.%06ld\r\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+    pos += sprintf(pos, "STAT curr_items %u\r\n", stats.curr_items);
+    pos += sprintf(pos, "STAT total_items %u\r\n", stats.total_items);
+    pos += sprintf(pos, "STAT bytes %llu\r\n", stats.curr_bytes);
+    pos += sprintf(pos, "STAT curr_connections %u\r\n", stats.curr_conns - 1); /* ignore listening conn */
+    pos += sprintf(pos, "STAT total_connections %u\r\n", stats.total_conns);
+    pos += sprintf(pos, "STAT connection_structures %u\r\n", stats.conn_structs);
+    pos += sprintf(pos, "STAT cmd_get %llu\r\n", stats.get_cmds);
+    pos += sprintf(pos, "STAT cmd_set %llu\r\n", stats.set_cmds);
+    pos += sprintf(pos, "STAT get_hits %llu\r\n", stats.get_hits);
+    pos += sprintf(pos, "STAT get_misses %llu\r\n", stats.get_misses);
+    pos += sprintf(pos, "STAT bytes_read %llu\r\n", stats.bytes_read);
+    pos += sprintf(pos, "STAT bytes_written %llu\r\n", stats.bytes_written);
+    pos += sprintf(pos, "STAT limit_maxbytes %llu\r\n", (unsigned long long) settings.maxbytes);
+    pos += sprintf(pos, "END");
+    out_string(c, temp);
+    return COMMAND_OK;
+}
+
+u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    rel_time_t now = current_time;
+    stats_reset();
+    out_string(c, "RESET");
+    return COMMAND_OK;
+}
+
+u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
 #ifdef HAVE_MALLOC_H
 #ifdef HAVE_STRUCT_MALLINFO
-    if (strcmp(command, "stats malloc") == 0) {
-        char temp[512];
-        struct mallinfo info;
-        char *pos = temp;
-
-        info = mallinfo();
-        pos += sprintf(pos, "STAT arena_size %d\r\n", info.arena);
-        pos += sprintf(pos, "STAT free_chunks %d\r\n", info.ordblks);
-        pos += sprintf(pos, "STAT fastbin_blocks %d\r\n", info.smblks);
-        pos += sprintf(pos, "STAT mmapped_regions %d\r\n", info.hblks);
-        pos += sprintf(pos, "STAT mmapped_space %d\r\n", info.hblkhd);
-        pos += sprintf(pos, "STAT max_total_alloc %d\r\n", info.usmblks);
-        pos += sprintf(pos, "STAT fastbin_space %d\r\n", info.fsmblks);
-        pos += sprintf(pos, "STAT total_alloc %d\r\n", info.uordblks);
-        pos += sprintf(pos, "STAT total_free %d\r\n", info.fordblks);
-        pos += sprintf(pos, "STAT releasable_space %d\r\nEND", info.keepcost);
-        out_string(c, temp);
-        return;
-    }
+    char temp[512];
+    struct mallinfo info;
+    char *pos = temp;
+    conn *c = (conn*)argv;
+    rel_time_t now = current_time;
+    info = mallinfo();
+    pos += sprintf(pos, "STAT arena_size %d\r\n", info.arena);
+    pos += sprintf(pos, "STAT free_chunks %d\r\n", info.ordblks);
+    pos += sprintf(pos, "STAT fastbin_blocks %d\r\n", info.smblks);
+    pos += sprintf(pos, "STAT mmapped_regions %d\r\n", info.hblks);
+    pos += sprintf(pos, "STAT mmapped_space %d\r\n", info.hblkhd);
+    pos += sprintf(pos, "STAT max_total_alloc %d\r\n", info.usmblks);
+    pos += sprintf(pos, "STAT fastbin_space %d\r\n", info.fsmblks);
+    pos += sprintf(pos, "STAT total_alloc %d\r\n", info.uordblks);
+    pos += sprintf(pos, "STAT total_free %d\r\n", info.fordblks);
+    pos += sprintf(pos, "STAT releasable_space %d\r\nEND", info.keepcost);
+    out_string(c, temp);
 #endif /* HAVE_STRUCT_MALLINFO */
 #endif /* HAVE_MALLOC_H */
+    return COMMAND_OK;
+}
 
-    if (strcmp(command, "stats maps") == 0) {
-        char *wbuf;
-        int wsize = 8192; /* should be enough */
-        int fd;
-        int res;
-
-        wbuf = (char *)malloc(wsize);
-        if (wbuf == 0) {
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
-        }
-
-        fd = open("/proc/self/maps", O_RDONLY);
-        if (fd == -1) {
-            out_string(c, "SERVER_ERROR cannot open the maps file");
-            free(wbuf);
-            return;
-        }
-
-        res = read(fd, wbuf, wsize - 6);  /* 6 = END\r\n\0 */
-        if (res == wsize - 6) {
-            out_string(c, "SERVER_ERROR buffer overflow");
-            free(wbuf); close(fd);
-            return;
-        }
-        if (res == 0 || res == -1) {
-            out_string(c, "SERVER_ERROR can't read the maps file");
-            free(wbuf); close(fd);
-            return;
-        }
-        strcpy(wbuf + res, "END\r\n");
-        c->write_and_free=wbuf;
-        c->wcurr=wbuf;
-        c->wbytes = res + 6;
-        conn_set_state(c, conn_write);
-        c->write_and_go = conn_read;
-        close(fd);
+u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
+    char *wbuf;
+    int wsize = 8192; /* should be enough */
+    int fd;
+    int res;
+    conn *c = (conn*)argv;
+    
+    wbuf = (char *)malloc(wsize);
+    if (wbuf == 0) {
+        out_string(c, "SERVER_ERROR out of memory");
         return;
     }
 
-    if (strncmp(command, "stats cachedump", 15) == 0) {
-        char *buf;
-        unsigned int bytes, id, limit = 0;
-        char *start = command + 15;
-        if (sscanf(start, "%u %u\r\n", &id, &limit) < 1) {
-            out_string(c, "CLIENT_ERROR bad command line");
-            return;
-        }
-
-        buf = item_cachedump(id, limit, &bytes);
-        if (buf == 0) {
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
-        }
-
-        c->write_and_free = buf;
-        c->wcurr = buf;
-        c->wbytes = bytes;
-        conn_set_state(c, conn_write);
-        c->write_and_go = conn_read;
+    fd = open("/proc/self/maps", O_RDONLY);
+    if (fd == -1) {
+        out_string(c, "SERVER_ERROR cannot open the maps file");
+        free(wbuf);
         return;
     }
 
-    if (strcmp(command, "stats slabs")==0) {
-        int bytes = 0;
-        char *buf = slabs_stats(&bytes);
-        if (!buf) {
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
-        }
-        c->write_and_free = buf;
-        c->wcurr = buf;
-        c->wbytes = bytes;
-        conn_set_state(c, conn_write);
-        c->write_and_go = conn_read;
+    res = read(fd, wbuf, wsize - 6);  /* 6 = END\r\n\0 */
+    if (res == wsize - 6) {
+        out_string(c, "SERVER_ERROR buffer overflow");
+        free(wbuf); close(fd);
+        return;
+    }
+    if (res == 0 || res == -1) {
+        out_string(c, "SERVER_ERROR can't read the maps file");
+        free(wbuf); close(fd);
+        return;
+    }
+    strcpy(wbuf + res, "END\r\n");
+    c->write_and_free=wbuf;
+    c->wcurr=wbuf;
+    c->wbytes = res + 6;
+    conn_set_state(c, conn_write);
+    c->write_and_go = conn_read;
+    close(fd);
+
+    return COMMAND_OK;
+}
+
+
+u_int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
+    char *buf;
+    unsigned int bytes, id, limit = 0;
+    conn *c = (conn*)argv;
+    char *start = command + 15;
+    if (sscanf(start, "%u %u\r\n", &id, &limit) < 1) {
+        out_string(c, "CLIENT_ERROR bad command line");
         return;
     }
 
-    if (strcmp(command, "stats items")==0) {
-        char buffer[4096];
-        item_stats(buffer, 4096);
-        out_string(c, buffer);
+    buf = item_cachedump(id, limit, &bytes);
+    if (buf == 0) {
+        out_string(c, "SERVER_ERROR out of memory");
         return;
     }
 
-    if (strcmp(command, "stats sizes")==0) {
-        int bytes = 0;
-        char *buf = item_stats_sizes(&bytes);
-        if (! buf) {
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
-        }
+    c->write_and_free = buf;
+    c->wcurr = buf;
+    c->wbytes = bytes;
+    conn_set_state(c, conn_write);
+    c->write_and_go = conn_read;
 
-        c->write_and_free = buf;
-        c->wcurr = buf;
-        c->wbytes = bytes;
-        conn_set_state(c, conn_write);
-        c->write_and_go = conn_read;
+    return COMMAND_OK;
+}
+
+u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
+    int bytes = 0;
+    char *buf = slabs_stats(&bytes);
+    conn *c = (conn*)argv;
+    if (!buf) {
+        out_string(c, "SERVER_ERROR out of memory");
+        return;
+    }
+    c->write_and_free = buf;
+    c->wcurr = buf;
+    c->wbytes = bytes;
+    conn_set_state(c, conn_write);
+    c->write_and_go = conn_read;
+
+    return COMMAND_OK;
+}
+
+u_int32_t stats_items_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    char buffer[4096];
+    item_stats(buffer, 4096);
+    out_string(c, buffer);
+    return COMMAND_OK;
+}
+
+u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
+    int bytes = 0;
+    char *buf = item_stats_sizes(&bytes);
+    conn *c = (conn*)argv;
+    if (! buf) {
+        out_string(c, "SERVER_ERROR out of memory");
         return;
     }
 
-    out_string(c, "ERROR");
+    c->write_and_free = buf;
+    c->wcurr = buf;
+    c->wbytes = bytes;
+    conn_set_state(c, conn_write);
+    c->write_and_go = conn_read;
+
+    return COMMAND_OK;
 }
 
 void process_command(conn *c, char *command) {
@@ -798,11 +841,6 @@ void process_command(conn *c, char *command) {
             out_string(c, "CLIENT_ERROR bad format");
             return;
         }
-    }
-
-    if (strncmp(command, "stats", 5) == 0) {
-        //process_stat(c, command);
-        //return;
     }
 
     if (strncmp(command, "flush_all", 9) == 0) {
@@ -1476,33 +1514,6 @@ int delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData
 }
 
 
-void save_pid(pid_t pid,char *pid_file) {
-    FILE *fp;
-    if (!pid_file)
-        return;
-
-    if (!(fp = fopen(pid_file,"w"))) {
-        fprintf(stderr,"Could not open the pid file %s for writing\n",pid_file);
-        return;
-    }
-
-    fprintf(fp,"%ld\n",(long) pid);
-    if (fclose(fp) == -1) {
-        fprintf(stderr,"Could not close the pid file %s.\n",pid_file);
-        return;
-    }
-}
-
-void remove_pidfile(char *pid_file) {
-  if (!pid_file)
-      return;
-
-  if (unlink(pid_file)) {
-      fprintf(stderr,"Could not remove the pid file %s.\n",pid_file);
-  }
-
-}
-
 int l_socket=0;
 int u_socket=-1;
 
@@ -1511,41 +1522,6 @@ void sig_handler(int sig) {
     exit(0);
 }
 
-u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
-    conn *c = (conn*)argv;
-    rel_time_t now = current_time;
-    LOG_DEBUG("stats_handler");
-    char temp[1024];
-    pid_t pid = getpid();
-    char *pos = temp;
-    struct rusage usage;
-
-    getrusage(RUSAGE_SELF, &usage);
-
-    pos += sprintf(pos, "STAT pid %u\r\n", pid);
-    pos += sprintf(pos, "STAT uptime %u\r\n", now);
-    pos += sprintf(pos, "STAT time %ld\r\n", now + stats.started);
-    pos += sprintf(pos, "STAT version " VERSION "\r\n");
-    pos += sprintf(pos, "STAT pointer_size %ld\r\n", 8 * sizeof(void*));
-    pos += sprintf(pos, "STAT rusage_user %ld.%06ld\r\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
-    pos += sprintf(pos, "STAT rusage_system %ld.%06ld\r\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
-    pos += sprintf(pos, "STAT curr_items %u\r\n", stats.curr_items);
-    pos += sprintf(pos, "STAT total_items %u\r\n", stats.total_items);
-    pos += sprintf(pos, "STAT bytes %llu\r\n", stats.curr_bytes);
-    pos += sprintf(pos, "STAT curr_connections %u\r\n", stats.curr_conns - 1); /* ignore listening conn */
-    pos += sprintf(pos, "STAT total_connections %u\r\n", stats.total_conns);
-    pos += sprintf(pos, "STAT connection_structures %u\r\n", stats.conn_structs);
-    pos += sprintf(pos, "STAT cmd_get %llu\r\n", stats.get_cmds);
-    pos += sprintf(pos, "STAT cmd_set %llu\r\n", stats.set_cmds);
-    pos += sprintf(pos, "STAT get_hits %llu\r\n", stats.get_hits);
-    pos += sprintf(pos, "STAT get_misses %llu\r\n", stats.get_misses);
-    pos += sprintf(pos, "STAT bytes_read %llu\r\n", stats.bytes_read);
-    pos += sprintf(pos, "STAT bytes_written %llu\r\n", stats.bytes_written);
-    pos += sprintf(pos, "STAT limit_maxbytes %llu\r\n", (unsigned long long) settings.maxbytes);
-    pos += sprintf(pos, "END");
-    out_string(c, temp);
-    return COMMAND_OK;
-}
 
 int main (int argc, char **argv) {
     conn *l_conn;
@@ -1734,10 +1710,25 @@ int main (int argc, char **argv) {
     /* create command service */
     g_cmd_srv = command_service_create();
     command_service_register_handler(g_cmd_srv, "stats", 5, FULL_MATCH, stats_handler);
+    command_service_register_handler(g_cmd_srv, "stats reset", 11, FULL_MATCH, stats_reset_handler);
+    command_service_register_handler(g_cmd_srv, "stats malloc", 12, FULL_MATCH, stats_malloc_handler);
+    command_service_register_handler(g_cmd_srv, "stats maps", 10, FULL_MATCH, stats_maps_handler);
+    command_service_register_handler(g_cmd_srv, "stats cachedump", 15, FULL_MATCH, stats_cachedump_handler);
+    command_service_register_handler(g_cmd_srv, "stats slabs", 11, FULL_MATCH, stats_slabs_handler);
+    command_service_register_handler(g_cmd_srv, "stats items", 11, FULL_MATCH, stats_items_handler);
+    command_service_register_handler(g_cmd_srv, "stats sizes", 11, FULL_MATCH, stats_sizes_handler);
 
     /* save the PID in if we're a daemon */
-    if (settings.daemonize) {
-        save_pid(getpid(), settings.pid_file);
+    if (settings.daemonize && NULL != settings.pid_file) {
+        FILE *fp;
+        if (!(fp = fopen(settings.pid_file,"w"))) {
+            fprintf(stderr,"Could not open the pid file %s for writing\n",settings.pid_file);
+        } else {
+            fprintf(fp,"%ld\n",(long) getpid());
+            if (fclose(fp) < 0) {
+                fprintf(stderr,"Could not close the pid file %s.\n",settings.pid_file);
+            }
+        }
     }
     /* enter the loop */
     aeMain(g_el);
@@ -1747,8 +1738,10 @@ int main (int argc, char **argv) {
     command_service_destory(g_cmd_srv);
 
     /* remove the PID file if we're a daemon */
-    if (settings.daemonize) {
-        remove_pidfile(settings.pid_file);
+    if (settings.daemonize && NULL != settings.pid_file) {
+        if (unlink(settings.pid_file) < 0) {
+            fprintf(stderr,"Could not remove the pid file %s.\n",settings.pid_file);
+        }
     }
     return 0;
 }

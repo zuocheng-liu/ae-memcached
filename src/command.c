@@ -20,7 +20,6 @@ u_int32_t command_service_register_handler(
         command_type cmd_type, 
         handler_t handler) {
     
-    LOG_DEBUG_F4("Add command handler %s %ld %d %d\n", cmd, cmd_len, cmd_type, service->command_count);
     command_info_ptr command;
     if (NULL == service || NULL == cmd || NULL == handler) {
         LOG_FATAL("FATAL command_service_register_handler params illegal\n");
@@ -66,7 +65,7 @@ u_int32_t command_service_register_handler(
         service->end_command = command;
     }
     ++ service->command_count;
-    LOG_DEBUG_F4("Added command %s %d %d %d\n", command->cmd, command->cmd_len, command->type, service->command_count);
+    LOG_DEBUG_F4("Add command %s %d %d %d\n", command->cmd, command->cmd_len, command->type, service->command_count);
     return 0;
 } 
 

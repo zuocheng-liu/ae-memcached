@@ -57,7 +57,4 @@ int transmit(conn *c);
 int ensure_iov_space(conn *c);
 int add_iov(conn *c, const void *buf, int len);
 int add_msghdr(conn *c);
-/* stats */
-void stats_reset(void);
-void stats_init(void);
 #endif /* end definition of MEMCACHED_H */
