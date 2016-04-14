@@ -680,7 +680,7 @@ u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
     conn *c = (conn*)argv;
     if (!buf) {
         out_string(c, "SERVER_ERROR out of memory");
-        return;
+        return COMMAND_OK;
     }
     c->write_and_free = buf;
     c->wcurr = buf;
@@ -705,7 +705,7 @@ u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
     conn *c = (conn*)argv;
     if (! buf) {
         out_string(c, "SERVER_ERROR out of memory");
-        return;
+        return COMMAND_OK;
     }
 
     c->write_and_free = buf;
