@@ -512,6 +512,92 @@ u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
+u_int32_t version_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    out_string(c, "VERSION " VERSION);
+    return COMMAND_OK;
+}
+
+u_int32_t quit_handler(char *cmd_s, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+    conn_set_state(c, conn_closing);
+    return COMMAND_OK;
+}
+
+u_int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+    conn *c = (conn*)argv;
+#ifdef ALLOW_SLABS_REASSIGN
+    int src, dst;
+    char *start = command + 15;
+    if (sscanf(start, "%u %u\r\n", &src, &dst) == 2) {
+        int rv = slabs_reassign(src, dst);
+        if (rv == 1) {
+            out_string(c, "DONE");
+            return;
+        }
+        if (rv == 0) {
+            out_string(c, "CANT");
+            return;
+        }
+        if (rv == -1) {
+            out_string(c, "BUSY");
+            return;
+        }
+    }
+    out_string(c, "CLIENT_ERROR bogus command");
+#else
+    out_string(c, "CLIENT_ERROR Slab reassignment not supported");
+#endif
+    return COMMAND_OK;
+}
+
+u_int32_t flush_all_handler(char *command, int argc, char ** argv) {
+    time_t exptime = 0;
+    int res;
+    conn *c = (conn*)argv;
+    set_current_time();
+
+    if (strcmp(command, "flush_all") == 0) {
+        settings.oldest_live = current_time;
+        out_string(c, "OK");
+        return COMMAND_OK;
+    }
+
+    res = sscanf(command, "%*s %ld", &exptime);
+    if (res != 1) {
+        out_string(c, "ERROR");
+        return COMMAND_OK;
+    }
+
+    settings.oldest_live = realtime(exptime);
+    out_string(c, "OK");
+    return COMMAND_OK;
+}
+
+u_int32_t bg_handler(char *command, int argc, char ** argv) {
+    int bucket, gen;
+    char *start = command + 3;
+    conn *c = (conn*)argv;
+    if (!settings.managed) {
+        out_string(c, "CLIENT_ERROR not a managed instance");
+        return COMMAND_OK;
+    }
+    if (sscanf(start, "%u:%u\r\n", &bucket,&gen) == 2) {
+        /* we never write anything back, even if input's wrong */
+        if ((bucket < 0) || (bucket >= MAX_BUCKETS) || (gen<=0)) {
+            /* do nothing, bad input */
+        } else {
+            c->bucket = bucket;
+            c->gen = gen;
+        }
+        conn_set_state(c, conn_read);
+        return COMMAND_OK;
+    } else {
+        out_string(c, "CLIENT_ERROR bad format");
+        return COMMAND_OK;
+    }
+}
+
 void process_command(conn *c, char *command) {
 
     int comm = 0;
@@ -819,87 +905,7 @@ void process_command(conn *c, char *command) {
             return;
         }
     }
-
-    if (strncmp(command, "bg ", 3) == 0) {
-        int bucket, gen;
-        char *start = command+3;
-        if (!settings.managed) {
-            out_string(c, "CLIENT_ERROR not a managed instance");
-            return;
-        }
-        if (sscanf(start, "%u:%u\r\n", &bucket,&gen) == 2) {
-            /* we never write anything back, even if input's wrong */
-            if ((bucket < 0) || (bucket >= MAX_BUCKETS) || (gen<=0)) {
-                /* do nothing, bad input */
-            } else {
-                c->bucket = bucket;
-                c->gen = gen;
-            }
-            conn_set_state(c, conn_read);
-            return;
-        } else {
-            out_string(c, "CLIENT_ERROR bad format");
-            return;
-        }
-    }
-
-    if (strncmp(command, "flush_all", 9) == 0) {
-        time_t exptime = 0;
-        int res;
-        set_current_time();
-
-        if (strcmp(command, "flush_all") == 0) {
-            settings.oldest_live = current_time;
-            out_string(c, "OK");
-            return;
-        }
-
-        res = sscanf(command, "%*s %ld", &exptime);
-        if (res != 1) {
-            out_string(c, "ERROR");
-            return;
-        }
-
-        settings.oldest_live = realtime(exptime);
-        out_string(c, "OK");
-        return;
-    }
-
-    if (strcmp(command, "version") == 0) {
-        out_string(c, "VERSION " VERSION);
-        return;
-    }
-
-    if (strcmp(command, "quit") == 0) {
-        conn_set_state(c, conn_closing);
-        return;
-    }
-
-    if (strncmp(command, "slabs reassign ", 15) == 0) {
-#ifdef ALLOW_SLABS_REASSIGN
-        int src, dst;
-        char *start = command+15;
-        if (sscanf(start, "%u %u\r\n", &src, &dst) == 2) {
-            int rv = slabs_reassign(src, dst);
-            if (rv == 1) {
-                out_string(c, "DONE");
-                return;
-            }
-            if (rv == 0) {
-                out_string(c, "CANT");
-                return;
-            }
-            if (rv == -1) {
-                out_string(c, "BUSY");
-                return;
-            }
-        }
-        out_string(c, "CLIENT_ERROR bogus command");
-#else
-        out_string(c, "CLIENT_ERROR Slab reassignment not supported");
-#endif
-        return;
-    }
+   
     if(command_service_run(g_cmd_srv, command, 1, (char **)c) < 0) {
         out_string(c, "ERROR");
     }
@@ -1717,6 +1723,11 @@ int main (int argc, char **argv) {
     command_service_register_handler(g_cmd_srv, "stats slabs", 11, FULL_MATCH, stats_slabs_handler);
     command_service_register_handler(g_cmd_srv, "stats items", 11, FULL_MATCH, stats_items_handler);
     command_service_register_handler(g_cmd_srv, "stats sizes", 11, FULL_MATCH, stats_sizes_handler);
+    command_service_register_handler(g_cmd_srv, "version", 7, FULL_MATCH, version_handler);
+    command_service_register_handler(g_cmd_srv, "quit", 4, FULL_MATCH, quit_handler);
+    command_service_register_handler(g_cmd_srv, "slabs reassign ", 15, FIXED_PREFIX, quit_handler);
+    command_service_register_handler(g_cmd_srv, "flush_all", 9, FIXED_PREFIX, flush_all_handler);
+    command_service_register_handler(g_cmd_srv, "bg ", 3, FIXED_PREFIX, bg_handler);
 
     /* save the PID in if we're a daemon */
     if (settings.daemonize && NULL != settings.pid_file) {
