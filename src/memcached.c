@@ -15,20 +15,22 @@
  *
  *  $Id$
  */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/signal.h>
-#include <sys/resource.h>
-#include <sys/uio.h>
 
 /* some POSIX systems need the following definition
  * to get mlockall flags out of sys/mman.h.  */
 #ifndef _P1003_1B_VISIBLE
 #define _P1003_1B_VISIBLE
 #endif
+
+
+#include <sys/signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/resource.h>
+#include <sys/uio.h>
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -40,10 +42,13 @@
 #include <assert.h>
 #include <limits.h>
 
+#include <stdio.h>  
+#include <stdlib.h>  
+#include <string.h>  
 
 #include "ae.h"
-#include "anet.h"
 #include "assoc.h"
+#include "connection.h"
 #include "memcached.h"
 
 static item **todelete = 0;
@@ -399,7 +404,7 @@ u_int32_t command_vary_delta(char *command, conn *c, int incr) {
         return COMMAND_OK;
     }
     ptr = ITEM_data(it);
-    while (*ptr && (*ptr<'0' && *ptr>'9')) ptr++;    // BUG: can't be true
+    while (*ptr && (*ptr<'0' && *ptr>'9')) ptr++;    /* BUG: can't be true */
     value = atoi(ptr);
     if (incr)
         value+=delta;
@@ -607,30 +612,30 @@ u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
     int fd;
     int res;
     conn *c = (conn*)argv;
-    
+
     wbuf = (char *)malloc(wsize);
     if (wbuf == 0) {
         out_string(c, "SERVER_ERROR out of memory");
-        return;
+        return COMMAND_OK;
     }
 
     fd = open("/proc/self/maps", O_RDONLY);
     if (fd == -1) {
         out_string(c, "SERVER_ERROR cannot open the maps file");
         free(wbuf);
-        return;
+        return COMMAND_OK;
     }
 
     res = read(fd, wbuf, wsize - 6);  /* 6 = END\r\n\0 */
     if (res == wsize - 6) {
         out_string(c, "SERVER_ERROR buffer overflow");
         free(wbuf); close(fd);
-        return;
+        return COMMAND_OK;
     }
     if (res == 0 || res == -1) {
         out_string(c, "SERVER_ERROR can't read the maps file");
         free(wbuf); close(fd);
-        return;
+        return COMMAND_OK;
     }
     strcpy(wbuf + res, "END\r\n");
     c->write_and_free=wbuf;
@@ -1214,7 +1219,9 @@ void event_handler(aeEventLoop *el, int fd, void *privdata, int mask) {
 
     conn *c;
     c = (conn *)privdata;
-    //c->which = which;
+    /*
+     * c->which = which;
+     */
 
     /* sanity */
     if (fd != c->sfd) {
@@ -1664,6 +1671,7 @@ int main (int argc, char **argv) {
             }
         }
     }
+
     /* enter the loop */
     aeMain(g_el);
     aeDeleteEventLoop(g_el);

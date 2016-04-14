@@ -1,0 +1,318 @@
+src/memcached.c: In function ‘complete_nread’:
+src/memcached.c:176:5: warning: implicit declaration of function ‘strncmp’ [-Wimplicit-function-declaration]
+     if (strncmp(ITEM_data(it) + it->nbytes - 2, "\r\n", 2) != 0) {
+     ^
+src/memcached.c: In function ‘command_get’:
+src/memcached.c:264:21: warning: implicit declaration of function ‘strlen’ [-Wimplicit-function-declaration]
+                     add_iov(c, ITEM_key(it), strlen(ITEM_key(it))) ||
+                     ^
+src/memcached.c:264:46: warning: incompatible implicit declaration of built-in function ‘strlen’ [enabled by default]
+                     add_iov(c, ITEM_key(it), strlen(ITEM_key(it))) ||
+                                              ^
+src/memcached.c:290:9: warning: implicit declaration of function ‘conn_set_state’ [-Wimplicit-function-declaration]
+         conn_set_state(c, conn_mwrite);
+         ^
+src/memcached.c:226:16: warning: unused variable ‘now’ [-Wunused-variable]
+     rel_time_t now  = current_time;
+                ^
+src/memcached.c:222:51: warning: unused parameter ‘binary’ [-Wunused-parameter]
+ u_int32_t command_get(char *command, conn *c, int binary) {
+                                                   ^
+src/memcached.c: In function ‘bget_handler’:
+src/memcached.c:296:43: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t bget_handler(char *command, int argc, char ** argv) {
+                                           ^
+src/memcached.c: In function ‘get_handler’:
+src/memcached.c:301:42: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t get_handler(char *command, int argc, char ** argv) {
+                                          ^
+src/memcached.c: In function ‘command_replace’:
+src/memcached.c:318:19: warning: incompatible implicit declaration of built-in function ‘strlen’ [enabled by default]
+     if (res!=4 || strlen(key)==0 ) {
+                   ^
+src/memcached.c: In function ‘replace_handler’:
+src/memcached.c:358:46: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t replace_handler(char *command, int argc, char ** argv) {
+                                              ^
+src/memcached.c: In function ‘set_handler’:
+src/memcached.c:362:42: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t set_handler(char *command, int argc, char ** argv) {
+                                          ^
+src/memcached.c: In function ‘add_handler’:
+src/memcached.c:366:42: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t add_handler(char *command, int argc, char ** argv) {
+                                          ^
+src/memcached.c: In function ‘command_vary_delta’:
+src/memcached.c:379:19: warning: incompatible implicit declaration of built-in function ‘strlen’ [enabled by default]
+     if (res!=2 || strlen(key)==0 ) {
+                   ^
+src/memcached.c:418:9: warning: implicit declaration of function ‘memcpy’ [-Wimplicit-function-declaration]
+         memcpy(ITEM_data(new_it), temp, res);
+         ^
+src/memcached.c:418:9: warning: incompatible implicit declaration of built-in function ‘memcpy’ [enabled by default]
+src/memcached.c:422:9: warning: incompatible implicit declaration of built-in function ‘memcpy’ [enabled by default]
+         memcpy(ITEM_data(it), temp, res);
+         ^
+src/memcached.c:423:9: warning: implicit declaration of function ‘memset’ [-Wimplicit-function-declaration]
+         memset(ITEM_data(it) + res, ' ', it->nbytes-res-2);
+         ^
+src/memcached.c:423:9: warning: incompatible implicit declaration of built-in function ‘memset’ [enabled by default]
+src/memcached.c: In function ‘incr_handler’:
+src/memcached.c:429:43: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t incr_handler(char *command, int argc, char ** argv) {
+                                           ^
+src/memcached.c: In function ‘decr_handler’:
+src/memcached.c:433:43: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t decr_handler(char *command, int argc, char ** argv) {
+                                           ^
+src/memcached.c: In function ‘delete_handler’:
+src/memcached.c:440:9: warning: variable ‘res’ set but not used [-Wunused-but-set-variable]
+     int res;
+         ^
+src/memcached.c:437:45: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t delete_handler(char *command, int argc, char ** argv) {
+                                             ^
+src/memcached.c: In function ‘own_handler’:
+src/memcached.c:491:42: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t own_handler(char *command, int argc, char ** argv) {
+                                          ^
+src/memcached.c: In function ‘disown_handler’:
+src/memcached.c:513:45: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t disown_handler(char *command, int argc, char ** argv) {
+                                             ^
+src/memcached.c: In function ‘stats_handler’:
+src/memcached.c:539:5: warning: implicit declaration of function ‘getpid’ [-Wimplicit-function-declaration]
+     pid_t pid = getpid();
+     ^
+src/memcached.c:535:31: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
+                               ^
+src/memcached.c:535:42: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
+                                          ^
+src/memcached.c: In function ‘stats_reset_handler’:
+src/memcached.c:572:16: warning: unused variable ‘now’ [-Wunused-variable]
+     rel_time_t now = current_time;
+                ^
+src/memcached.c:570:37: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
+                                     ^
+src/memcached.c:570:48: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
+                                                ^
+src/memcached.c: In function ‘stats_malloc_handler’:
+src/memcached.c:578:38: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
+                                      ^
+src/memcached.c:578:49: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
+                                                 ^
+src/memcached.c:578:63: warning: unused parameter ‘argv’ [-Wunused-parameter]
+ u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
+                                                               ^
+src/memcached.c: In function ‘stats_maps_handler’:
+src/memcached.c:623:5: warning: implicit declaration of function ‘read’ [-Wimplicit-function-declaration]
+     res = read(fd, wbuf, wsize - 6);  /* 6 = END\r\n\0 */
+     ^
+src/memcached.c:626:9: warning: implicit declaration of function ‘close’ [-Wimplicit-function-declaration]
+         free(wbuf); close(fd);
+         ^
+src/memcached.c:634:5: warning: implicit declaration of function ‘strcpy’ [-Wimplicit-function-declaration]
+     strcpy(wbuf + res, "END\r\n");
+     ^
+src/memcached.c:634:5: warning: incompatible implicit declaration of built-in function ‘strcpy’ [enabled by default]
+src/memcached.c:603:36: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
+                                    ^
+src/memcached.c:603:47: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
+                                               ^
+src/memcached.c: In function ‘stats_cachedump_handler’:
+src/memcached.c:646:54: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
+                                                      ^
+src/memcached.c: In function ‘stats_slabs_handler’:
+src/memcached.c:677:9: warning: ‘return’ with no value, in function returning non-void [-Wreturn-type]
+         return;
+         ^
+src/memcached.c:671:37: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
+                                     ^
+src/memcached.c:671:48: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
+                                                ^
+src/memcached.c: In function ‘stats_items_handler’:
+src/memcached.c:688:37: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_items_handler(char *cmd_s, int argc, char ** argv) {
+                                     ^
+src/memcached.c:688:48: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_items_handler(char *cmd_s, int argc, char ** argv) {
+                                                ^
+src/memcached.c: In function ‘stats_sizes_handler’:
+src/memcached.c:702:9: warning: ‘return’ with no value, in function returning non-void [-Wreturn-type]
+         return;
+         ^
+src/memcached.c:696:37: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
+                                     ^
+src/memcached.c:696:48: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
+                                                ^
+src/memcached.c: In function ‘version_handler’:
+src/memcached.c:714:33: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t version_handler(char *cmd_s, int argc, char ** argv) {
+                                 ^
+src/memcached.c:714:44: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t version_handler(char *cmd_s, int argc, char ** argv) {
+                                            ^
+src/memcached.c: In function ‘quit_handler’:
+src/memcached.c:720:30: warning: unused parameter ‘cmd_s’ [-Wunused-parameter]
+ u_int32_t quit_handler(char *cmd_s, int argc, char ** argv) {
+                              ^
+src/memcached.c:720:41: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t quit_handler(char *cmd_s, int argc, char ** argv) {
+                                         ^
+src/memcached.c: In function ‘slabs_reassign_handler’:
+src/memcached.c:726:40: warning: unused parameter ‘command’ [-Wunused-parameter]
+ u_int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+                                        ^
+src/memcached.c:726:53: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+                                                     ^
+src/memcached.c: In function ‘flush_all_handler’:
+src/memcached.c:759:5: warning: implicit declaration of function ‘strcmp’ [-Wimplicit-function-declaration]
+     if (strcmp(command, "flush_all") == 0) {
+     ^
+src/memcached.c:753:48: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t flush_all_handler(char *command, int argc, char ** argv) {
+                                                ^
+src/memcached.c: In function ‘bg_handler’:
+src/memcached.c:776:41: warning: unused parameter ‘argc’ [-Wunused-parameter]
+ u_int32_t bg_handler(char *command, int argc, char ** argv) {
+                                         ^
+src/memcached.c: In function ‘process_command’:
+src/memcached.c:812:27: warning: comparison of unsigned expression < 0 is always false [-Wtype-limits]
+     if(command_service_run(g_cmd_srv, command, 1, (char **)c) < 0) {
+                           ^
+src/memcached.c: In function ‘try_read_command’:
+src/memcached.c:826:5: warning: implicit declaration of function ‘memchr’ [-Wimplicit-function-declaration]
+     el = memchr(c->rcurr, '\n', c->rbytes);
+     ^
+src/memcached.c:826:10: warning: incompatible implicit declaration of built-in function ‘memchr’ [enabled by default]
+     el = memchr(c->rcurr, '\n', c->rbytes);
+          ^
+src/memcached.c: In function ‘try_read_udp’:
+src/memcached.c:868:9: warning: implicit declaration of function ‘memmove’ [-Wimplicit-function-declaration]
+         memmove(c->rbuf, c->rbuf + 8, res);
+         ^
+src/memcached.c:868:9: warning: incompatible implicit declaration of built-in function ‘memmove’ [enabled by default]
+src/memcached.c: In function ‘try_read_network’:
+src/memcached.c:890:13: warning: incompatible implicit declaration of built-in function ‘memmove’ [enabled by default]
+             memmove(c->rbuf, c->rcurr, c->rbytes);
+             ^
+src/memcached.c: In function ‘transmit’:
+src/memcached.c:972:45: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+             while (m->msg_iovlen > 0 && res >= m->msg_iov->iov_len) {
+                                             ^
+src/memcached.c: In function ‘drive_machine’:
+src/memcached.c:1070:17: warning: incompatible implicit declaration of built-in function ‘memcpy’ [enabled by default]
+                 memcpy(c->ritem, c->rcurr, tocopy);
+                 ^
+src/memcached.c:1153:32: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+                         c->udp && build_udp_headers(c)) {
+                                ^
+src/memcached.c:1198:17: warning: implicit declaration of function ‘conn_cleanup’ [-Wimplicit-function-declaration]
+                 conn_cleanup(c);
+                 ^
+src/memcached.c: In function ‘event_handler’:
+src/memcached.c:1216:5: error: expected expression before ‘/’ token
+     //c->which = which;
+     ^
+src/memcached.c: In function ‘server_socket’:
+src/memcached.c:1308:5: warning: incompatible implicit declaration of built-in function ‘memset’ [enabled by default]
+     memset(&addr, 0, sizeof(addr));
+     ^
+src/memcached.c: In function ‘server_socket_unix’:
+src/memcached.c:1362:5: warning: implicit declaration of function ‘lstat’ [-Wimplicit-function-declaration]
+     if (!lstat(path, &tstat)) {
+     ^
+src/memcached.c:1363:9: warning: implicit declaration of function ‘S_ISSOCK’ [-Wimplicit-function-declaration]
+         if (S_ISSOCK(tstat.st_mode))
+         ^
+src/memcached.c:1364:13: warning: implicit declaration of function ‘unlink’ [-Wimplicit-function-declaration]
+             unlink(path);
+             ^
+src/memcached.c:1375:5: warning: incompatible implicit declaration of built-in function ‘memset’ [enabled by default]
+     memset(&addr, 0, sizeof(addr));
+     ^
+src/memcached.c:1378:5: warning: incompatible implicit declaration of built-in function ‘strcpy’ [enabled by default]
+     strcpy(addr.sun_path, path);
+     ^
+src/memcached.c: In function ‘pre_gdb’:
+src/memcached.c:1399:5: warning: implicit declaration of function ‘kill’ [-Wimplicit-function-declaration]
+     kill(getpid(), SIGABRT);
+     ^
+src/memcached.c: In function ‘clock_handler’:
+src/memcached.c:1402:39: warning: unused parameter ‘eventLoop’ [-Wunused-parameter]
+ int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                       ^
+src/memcached.c:1402:60: warning: unused parameter ‘id’ [-Wunused-parameter]
+ int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                                            ^
+src/memcached.c:1402:70: warning: unused parameter ‘clientData’ [-Wunused-parameter]
+ int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                                                      ^
+src/memcached.c: In function ‘timer_delete_handler’:
+src/memcached.c:1409:16: warning: unused variable ‘now’ [-Wunused-variable]
+     rel_time_t now = current_time;
+                ^
+src/memcached.c:1407:46: warning: unused parameter ‘eventLoop’ [-Wunused-parameter]
+ int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                              ^
+src/memcached.c:1407:67: warning: unused parameter ‘id’ [-Wunused-parameter]
+ int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                                                   ^
+src/memcached.c:1407:77: warning: unused parameter ‘clientData’ [-Wunused-parameter]
+ int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+                                                                             ^
+src/memcached.c: In function ‘sig_handler’:
+src/memcached.c:1429:22: warning: unused parameter ‘sig’ [-Wunused-parameter]
+ void sig_handler(int sig) {
+                      ^
+src/memcached.c: In function ‘main’:
+src/memcached.c:1439:22: error: storage size of ‘sa’ isn’t known
+     struct sigaction sa;
+                      ^
+src/memcached.c:1449:5: warning: implicit declaration of function ‘settings_init’ [-Wimplicit-function-declaration]
+     settings_init(&settings);
+     ^
+src/memcached.c:1495:27: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+         if (rlim.rlim_cur < maxfiles)
+                           ^
+src/memcached.c:1531:5: warning: implicit declaration of function ‘getuid’ [-Wimplicit-function-declaration]
+     if (getuid()== 0 || geteuid()==0) {
+     ^
+src/memcached.c:1531:5: warning: implicit declaration of function ‘geteuid’ [-Wimplicit-function-declaration]
+src/memcached.c:1540:9: warning: implicit declaration of function ‘setgid’ [-Wimplicit-function-declaration]
+         if (setgid(pw->pw_gid)<0 || setuid(pw->pw_uid)<0) {
+         ^
+src/memcached.c:1540:9: warning: implicit declaration of function ‘setuid’ [-Wimplicit-function-declaration]
+src/memcached.c:1559:9: warning: implicit declaration of function ‘daemon’ [-Wimplicit-function-declaration]
+         res = daemon(settings.maxcore, settings.verbose);
+         ^
+src/memcached.c:1581:9: warning: incompatible implicit declaration of built-in function ‘memset’ [enabled by default]
+         memset(buckets, 0, sizeof(int)*MAX_BUCKETS);
+         ^
+src/memcached.c:1596:5: warning: implicit declaration of function ‘sigemptyset’ [-Wimplicit-function-declaration]
+     if (sigemptyset(&sa.sa_mask) == -1 ||
+     ^
+src/memcached.c:1597:9: warning: implicit declaration of function ‘sigaction’ [-Wimplicit-function-declaration]
+         sigaction(SIGPIPE, &sa, 0) == -1) {
+         ^
+src/memcached.c:1439:22: warning: unused variable ‘sa’ [-Wunused-variable]
+     struct sigaction sa;
+                      ^
+src/memcached.c:1437:11: warning: unused variable ‘u_conn’ [-Wunused-variable]
+     conn *u_conn;
+           ^
+make: *** [compile/memcached.o] Error 1

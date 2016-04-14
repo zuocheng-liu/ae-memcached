@@ -40,7 +40,6 @@ extern volatile rel_time_t current_time;
  */
 
 /* event handling, network IO */
-//int event_handler(int fd, short which, void *arg);
 void event_handler(aeEventLoop *el, int fd, void *privdata, int mask);
 void drive_machine(conn *c);
 int new_socket(int isUdp);

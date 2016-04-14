@@ -33,6 +33,8 @@
 #ifndef __AE_H__
 #define __AE_H__
 
+#include <sys/time.h>
+
 #define AE_SETSIZE (1024*10)    /* Max number of fd supported */
 #define AE_OK 0
 #define AE_ERR -1

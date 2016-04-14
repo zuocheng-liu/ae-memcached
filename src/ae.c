@@ -38,7 +38,6 @@
 #include <sys/epoll.h>
 #include <poll.h>
 #include <string.h>
-#include <time.h>
 #include <errno.h>
 
 

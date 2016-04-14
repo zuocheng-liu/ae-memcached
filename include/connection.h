@@ -108,4 +108,4 @@ int add_iov(conn *c, const void *buf, int len);
  */
 int add_msghdr(conn *c);
 
-#endif // end definition of CONNECTION_H
+#endif /* end definition of CONNECTION_H */

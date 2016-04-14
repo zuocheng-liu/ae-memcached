@@ -269,7 +269,6 @@ void out_string(conn *c, char *str) {
 
 int add_iov(conn *c, const void *buf, int len) {
     struct msghdr *m;
-    int i;
     int leftover;
     int limit_to_mtu;
 

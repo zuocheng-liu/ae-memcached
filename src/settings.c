@@ -101,6 +101,7 @@ u_int32_t process_arguments(struct settings *settings, int argc, char **argv) {
                 return 1;
         }
     }
+    return 1;
 }
 
 void usage(void) {
