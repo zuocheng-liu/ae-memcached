@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define VERSION "1.2.0"
+#define PACKAGE "ae-memached"
 
 #define DATA_BUFFER_SIZE 2048
 #define UDP_READ_BUFFER_SIZE 65536
@@ -28,7 +30,5 @@
  * #define NDEBUG
  */
 #endif
-
-
 
 #endif /* End definition of CONFIG_H */

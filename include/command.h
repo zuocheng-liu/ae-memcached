@@ -1,5 +1,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -36,6 +37,6 @@ command_service_ptr command_service_create();
 u_int32_t command_service_register_handler(command_service_ptr, char *cmd, size_t cmd_len, command_type cmd_type, handler_t handler); 
 /* execute the command */
 u_int32_t command_service_run(command_service_ptr service, char *cmd,int argc, char **argv);
-/* destory a command service */
+/* destory a command service, release the memory alloced */
 void command_service_destory(command_service_ptr service);
 #endif /* End definition of COMMAND_H */

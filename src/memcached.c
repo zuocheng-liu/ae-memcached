@@ -33,7 +33,6 @@
 #include <pwd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -75,23 +74,6 @@ rel_time_t realtime(time_t exptime) {
     else {
         return (rel_time_t) (exptime + current_time);
     }
-}
-
-void stats_init(void) {
-    stats.curr_items = stats.total_items = stats.curr_conns = stats.total_conns = stats.conn_structs = 0;
-    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
-    stats.curr_bytes = stats.bytes_read = stats.bytes_written = 0;
-
-    /* make the time we started always be 1 second before we really
-       did, so time(0) - time.started is never zero.  if so, things
-       like 'settings.oldest_live' which act as booleans as well as
-       values are now false in boolean context... */
-    stats.started = time(0) - 1;
-}
-void stats_reset(void) {
-    stats.total_items = stats.total_conns = 0;
-    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
-    stats.bytes_read = stats.bytes_written = 0;
 }
 
 /* returns true if a deleted item's delete-locked-time is over, and it
@@ -1493,99 +1475,6 @@ int delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData
     return 1000;
 }
 
-void usage(void) {
-    printf(PACKAGE " " VERSION "\n");
-    printf("-p <num>      port number to listen on\n");
-    printf("-s <file>     unix socket path to listen on (disables network support)\n");
-    printf("-l <ip_addr>  interface to listen on, default is INDRR_ANY\n");
-    printf("-d            run as a daemon\n");
-    printf("-r            maximize core file limit\n");
-    printf("-u <username> assume identity of <username> (only when run as root)\n");
-    printf("-m <num>      max memory to use for items in megabytes, default is 64 MB\n");
-    printf("-M            return error on memory exhausted (rather than removing items)\n");
-    printf("-c <num>      max simultaneous connections, default is 1024\n");
-    printf("-k            lock down all paged memory\n");
-    printf("-v            verbose (print errors/warnings while in event loop)\n");
-    printf("-vv           very verbose (also print client commands/reponses)\n");
-    printf("-h            print this help and exit\n");
-    printf("-i            print memcached and libevent license\n");
-    printf("-b            run a managed instanced (mnemonic: buckets)\n");
-    printf("-P <file>     save PID in <file>, only used with -d option\n");
-    printf("-f <factor>   chunk size growth factor, default 1.25\n");
-    printf("-n <bytes>    minimum space allocated for key+value+flags, default 48\n");
-    return;
-}
-
-void usage_license(void) {
-    printf(PACKAGE " " VERSION "\n\n");
-    printf(
-    "Copyright (c) 2003, Danga Interactive, Inc. <http://www.danga.com/>\n"
-    "All rights reserved.\n"
-    "\n"
-    "Redistribution and use in source and binary forms, with or without\n"
-    "modification, are permitted provided that the following conditions are\n"
-    "met:\n"
-    "\n"
-    "    * Redistributions of source code must retain the above copyright\n"
-    "notice, this list of conditions and the following disclaimer.\n"
-    "\n"
-    "    * Redistributions in binary form must reproduce the above\n"
-    "copyright notice, this list of conditions and the following disclaimer\n"
-    "in the documentation and/or other materials provided with the\n"
-    "distribution.\n"
-    "\n"
-    "    * Neither the name of the Danga Interactive nor the names of its\n"
-    "contributors may be used to endorse or promote products derived from\n"
-    "this software without specific prior written permission.\n"
-    "\n"
-    "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-    "\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-    "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-    "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-    "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-    "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-    "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-    "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-    "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-    "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-    "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-    "\n"
-    "\n"
-    "This product includes software developed by Niels Provos.\n"
-    "\n"
-    "[ libevent ]\n"
-    "\n"
-    "Copyright 2000-2003 Niels Provos <provos@citi.umich.edu>\n"
-    "All rights reserved.\n"
-    "\n"
-    "Redistribution and use in source and binary forms, with or without\n"
-    "modification, are permitted provided that the following conditions\n"
-    "are met:\n"
-    "1. Redistributions of source code must retain the above copyright\n"
-    "   notice, this list of conditions and the following disclaimer.\n"
-    "2. Redistributions in binary form must reproduce the above copyright\n"
-    "   notice, this list of conditions and the following disclaimer in the\n"
-    "   documentation and/or other materials provided with the distribution.\n"
-    "3. All advertising materials mentioning features or use of this software\n"
-    "   must display the following acknowledgement:\n"
-    "      This product includes software developed by Niels Provos.\n"
-    "4. The name of the author may not be used to endorse or promote products\n"
-    "   derived from this software without specific prior written permission.\n"
-    "\n"
-    "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
-    "IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
-    "OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
-    "IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
-    "INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
-    "NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-    "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-    "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-    "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
-    "THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-    );
-
-    return;
-}
 
 void save_pid(pid_t pid,char *pid_file) {
     FILE *fp;
@@ -1659,18 +1548,11 @@ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
 }
 
 int main (int argc, char **argv) {
-    int c;
     conn *l_conn;
     conn *u_conn;
-    struct in_addr addr;
-    int lock_memory = 0;
-    int daemonize = 0;
-    int maxcore = 0;
-    char *username = 0;
     struct passwd *pw;
     struct sigaction sa;
     struct rlimit rlim;
-    char *pid_file = NULL;
     
     /* set stderr non-buffering (for running under, say, daemontools) */
     setbuf(stderr, NULL);
@@ -1686,82 +1568,9 @@ int main (int argc, char **argv) {
 
      
     /* process arguments */
-    while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:s:")) != -1) {
-        switch (c) {
-        case 'U':
-            settings.udpport = atoi(optarg);
-            break;
-        case 'b':
-            settings.managed = 1;
-            break;
-        case 'p':
-            settings.port = atoi(optarg);
-            break;
-        case 's':
-            settings.socketpath = optarg;
-            break;
-        case 'm':
-            settings.maxbytes = ((size_t)atoi(optarg))*1024*1024;
-            break;
-        case 'M':
-            settings.evict_to_free = 0;
-            break;
-        case 'c':
-            settings.maxconns = atoi(optarg);
-            break;
-        case 'h':
-            usage();
-            exit(0);
-        case 'i':
-            usage_license();
-            exit(0);
-        case 'k':
-            lock_memory = 1;
-            break;
-        case 'v':
-            settings.verbose++;
-            break;
-        case 'l':
-            if (!inet_pton(AF_INET, optarg, &addr)) {
-                fprintf(stderr, "Illegal address: %s\n", optarg);
-                return 1;
-            } else {
-                settings.interface = addr;
-            }
-            break;
-        case 'd':
-            daemonize = 1;
-            break;
-        case 'r':
-            maxcore = 1;
-            break;
-        case 'u':
-            username = optarg;
-            break;
-        case 'P':
-            pid_file = optarg;
-            break;
-        case 'f':
-            settings.factor = atof(optarg);
-            if (settings.factor <= 1.0) {
-                fprintf(stderr, "Factor must be greater than 1\n");
-                return 1;
-            }
-            break;
-        case 'n':
-            settings.chunk_size = atoi(optarg);
-            if (settings.chunk_size == 0) {
-                fprintf(stderr, "Chunk size must be greater than 0\n");
-                return 1;
-            }
-            break;
-        default:
-            fprintf(stderr, "Illegal argument \"%c\"\n", c);
-            return 1;
-        }
-    }
+    process_arguments(argc, argv);
 
-    if (maxcore) {
+    if (settings.maxcore) {
         struct rlimit rlim_new;
         /*
          * First try raising to infinity; if that fails, try bringing
@@ -1835,16 +1644,16 @@ int main (int argc, char **argv) {
 
     /* lose root privileges if we have them */
     if (getuid()== 0 || geteuid()==0) {
-        if (username==0 || *username=='\0') {
+        if (settings.username==0 || *(settings.username)=='\0') {
             fprintf(stderr, "can't run as root without the -u switch\n");
             return 1;
         }
-        if ((pw = getpwnam(username)) == 0) {
-            fprintf(stderr, "can't find the user %s to switch to\n", username);
+        if ((pw = getpwnam(settings.username)) == 0) {
+            fprintf(stderr, "can't find the user %s to switch to\n", settings.username);
             return 1;
         }
         if (setgid(pw->pw_gid)<0 || setuid(pw->pw_uid)<0) {
-            fprintf(stderr, "failed to assume identity of user %s\n", username);
+            fprintf(stderr, "failed to assume identity of user %s\n", settings.username);
             return 1;
         }
     }
@@ -1860,9 +1669,9 @@ int main (int argc, char **argv) {
 
     /* daemonize if requested */
     /* if we want to ensure our ability to dump core, don't chdir to / */
-    if (daemonize) {
+    if (settings.daemonize) {
         int res;
-        res = daemon(maxcore, settings.verbose);
+        res = daemon(settings.maxcore, settings.verbose);
         if (res == -1) {
             fprintf(stderr, "failed to daemon() in order to daemonize\n");
             return 1;
@@ -1888,7 +1697,7 @@ int main (int argc, char **argv) {
     }
 
     /* lock paged memory if needed */
-    if (lock_memory) {
+    if (settings.lock_memory) {
         mlockall(MCL_CURRENT | MCL_FUTURE);
         fprintf(stderr, "warning: mlockall() not supported on this platform.  proceeding without.\n");
     }
@@ -1927,8 +1736,8 @@ int main (int argc, char **argv) {
     command_service_register_handler(g_cmd_srv, "stats", 5, FULL_MATCH, stats_handler);
 
     /* save the PID in if we're a daemon */
-    if (daemonize) {
-        save_pid(getpid(),pid_file);
+    if (settings.daemonize) {
+        save_pid(getpid(), settings.pid_file);
     }
     /* enter the loop */
     aeMain(g_el);
@@ -1938,8 +1747,8 @@ int main (int argc, char **argv) {
     command_service_destory(g_cmd_srv);
 
     /* remove the PID file if we're a daemon */
-    if (daemonize) {
-        remove_pidfile(pid_file);
+    if (settings.daemonize) {
+        remove_pidfile(settings.pid_file);
     }
     return 0;
 }
