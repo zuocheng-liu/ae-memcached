@@ -1,6 +1,6 @@
 #include "stats.h"
 #include "settings.h"
-
+#include <time.h>
 void stats_init(struct stats *stats) {
     stats->curr_items = 0;
     stats->total_items = 0;

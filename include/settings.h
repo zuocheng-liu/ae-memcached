@@ -25,6 +25,7 @@ struct settings {
 };
 
 
+void settings_init(struct settings *settings);
 u_int32_t process_arguments(struct settings *settings, int argc, char **argv);
 void usage(void); 
 void usage_license(void); 

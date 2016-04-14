@@ -16,8 +16,9 @@
 #include <time.h>
 #include <assert.h>
 
-#include "memcached.h"
-
+#include "items.h"
+#include "slabs.h"
+#include "assoc.h"
 
 #define LARGEST_ID 255
 

@@ -47,6 +47,8 @@ void slabs_preallocate (unsigned int maxslabs);
 /* 0 means error: can't store such a large object */
 unsigned int slabs_clsid(size_t size);
 
+int slabs_newslab(unsigned int id);
+
 /* Allocate object of given length. 0 on error */
 void *slabs_alloc(size_t size);
 

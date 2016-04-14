@@ -51,6 +51,7 @@
 #include "assoc.h"
 #include "connection.h"
 #include "memcached.h"
+#include "global.h"
 
 static item **todelete = 0;
 static int delcurr;
