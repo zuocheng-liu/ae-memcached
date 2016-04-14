@@ -1543,14 +1543,14 @@ int main (int argc, char **argv) {
     signal(SIGINT, sig_handler);
 
     /* init settings */
-    settings_init();
+    settings_init(&settings);
     
     /* create AE event loop  */
     g_el = aeCreateEventLoop();
 
      
     /* process arguments */
-    process_arguments(argc, argv);
+    process_arguments(&settings, argc, argv);
 
     if (settings.maxcore) {
         struct rlimit rlim_new;

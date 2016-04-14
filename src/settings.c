@@ -3,52 +3,52 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void settings_init(void) {
-    settings.port = 11211;
-    settings.udpport = 0;
-    settings.interface.s_addr = htonl(INADDR_ANY);
-    settings.maxbytes = 64*1024*1024; /* default is 64MB */
-    settings.maxconns = 1024;         /* to limit connections-related memory to about 5MB */
-    settings.verbose = 0;
-    settings.oldest_live = 0;
-    settings.evict_to_free = 1;       /* push old items out of cache when memory runs out */
-    settings.socketpath = NULL;       /* by default, not using a unix socket */
-    settings.managed = 0;
-    settings.factor = 1.25;
-    settings.chunk_size = 48;         /* space for a modest key and value */
-    settings.lock_memory = 0;
-    settings.daemonize = 0;
-    settings.maxcore = 0;
-    settings.username = NULL;
-    settings.pid_file = NULL;
+void settings_init(struct settings *settings) {
+    settings->port = 11211;
+    settings->udpport = 0;
+    settings->interface.s_addr = htonl(INADDR_ANY);
+    settings->maxbytes = 64*1024*1024; /* default is 64MB */
+    settings->maxconns = 1024;         /* to limit connections-related memory to about 5MB */
+    settings->verbose = 0;
+    settings->oldest_live = 0;
+    settings->evict_to_free = 1;       /* push old items out of cache when memory runs out */
+    settings->socketpath = NULL;       /* by default, not using a unix socket */
+    settings->managed = 0;
+    settings->factor = 1.25;
+    settings->chunk_size = 48;         /* space for a modest key and value */
+    settings->lock_memory = 0;
+    settings->daemonize = 0;
+    settings->maxcore = 0;
+    settings->username = NULL;
+    settings->pid_file = NULL;
 }
 
 /* process arguments */
-u_int32_t process_arguments(int argc, char **argv) {
+u_int32_t process_arguments(struct settings *settings, int argc, char **argv) {
     int c;
     struct in_addr addr;
     while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:s:")) != -1) {
         switch (c) {
             case 'U':
-                settings.udpport = atoi(optarg);
+                settings->udpport = atoi(optarg);
                 break;
             case 'b':
-                settings.managed = 1;
+                settings->managed = 1;
                 break;
             case 'p':
-                settings.port = atoi(optarg);
+                settings->port = atoi(optarg);
                 break;
             case 's':
-                settings.socketpath = optarg;
+                settings->socketpath = optarg;
                 break;
             case 'm':
-                settings.maxbytes = ((size_t)atoi(optarg))*1024*1024;
+                settings->maxbytes = ((size_t)atoi(optarg))*1024*1024;
                 break;
             case 'M':
-                settings.evict_to_free = 0;
+                settings->evict_to_free = 0;
                 break;
             case 'c':
-                settings.maxconns = atoi(optarg);
+                settings->maxconns = atoi(optarg);
                 break;
             case 'h':
                 usage();
@@ -57,41 +57,41 @@ u_int32_t process_arguments(int argc, char **argv) {
                 usage_license();
                 exit(0);
             case 'k':
-                settings.lock_memory = 1;
+                settings->lock_memory = 1;
                 break;
             case 'v':
-                settings.verbose++;
+                settings->verbose++;
                 break;
             case 'l':
                 if (!inet_pton(AF_INET, optarg, &addr)) {
                     fprintf(stderr, "Illegal address: %s\n", optarg);
                     return 1;
                 } else {
-                    settings.interface = addr;
+                    settings->interface = addr;
                 }
                 break;
             case 'd':
-                settings.daemonize = 1;
+                settings->daemonize = 1;
                 break;
             case 'r':
-                settings.maxcore = 1;
+                settings->maxcore = 1;
                 break;
             case 'u':
-                settings.username = optarg;
+                settings->username = optarg;
                 break;
             case 'P':
-                settings.pid_file = optarg;
+                settings->pid_file = optarg;
                 break;
             case 'f':
-                settings.factor = atof(optarg);
-                if (settings.factor <= 1.0) {
+                settings->factor = atof(optarg);
+                if (settings->factor <= 1.0) {
                     fprintf(stderr, "Factor must be greater than 1\n");
                     return 1;
                 }
                 break;
             case 'n':
-                settings.chunk_size = atoi(optarg);
-                if (settings.chunk_size == 0) {
+                settings->chunk_size = atoi(optarg);
+                if (settings->chunk_size == 0) {
                     fprintf(stderr, "Chunk size must be greater than 0\n");
                     return 1;
                 }

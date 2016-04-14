@@ -33,5 +33,3 @@ void stats_reset(void) {
     stats.bytes_written = 0;
 }
 
-
-

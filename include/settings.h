@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include "memcached_time.h"
+
 struct settings {
     size_t maxbytes;
     int maxconns;
@@ -24,9 +25,7 @@ struct settings {
 };
 
 
-extern struct settings settings;
-
-u_int32_t process_arguments(int argc, char **argv);
+u_int32_t process_arguments(struct settings *settings, int argc, char **argv);
 void usage(void); 
 void usage_license(void); 
 #endif /* End definition of SETTINGS_H */
