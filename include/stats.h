@@ -18,10 +18,7 @@ struct stats {
     unsigned long long bytes_written;
 };
 
-/* global variables */
-extern struct stats stats;
-
 /* functions */
-void stats_init(void);
-void stats_reset(void);
+void stats_init(struct stats *stats);
+void stats_reset(struct stats *stats);
 #endif /* End definition STATS_H */

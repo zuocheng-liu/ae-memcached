@@ -371,7 +371,7 @@ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
 u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
     conn *c = (conn*)argv;
     rel_time_t now = current_time;
-    stats_reset();
+    stats_reset(&stats);
     out_string(c, "RESET");
     return COMMAND_OK;
 }
@@ -1663,7 +1663,7 @@ int main (int argc, char **argv) {
 
     /* initialize other stuff */
     item_init();
-    stats_init();
+    stats_init(&stats);
     assoc_init();
     conn_init();
     slabs_init(settings.maxbytes, settings.factor);
