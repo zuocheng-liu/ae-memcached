@@ -325,7 +325,7 @@ u_int32_t command_replace(char *command, conn *c, int com_type) {
         int bucket = c->bucket;
         if (bucket == -1) {
             out_string(c, "CLIENT_ERROR no BG data in managed mode");
-            return;
+            return COMMAND_OK;
         }
         c->bucket = -1;
         if (buckets[bucket] != c->gen) {
@@ -651,13 +651,13 @@ u_int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
     char *start = command + 15;
     if (sscanf(start, "%u %u\r\n", &id, &limit) < 1) {
         out_string(c, "CLIENT_ERROR bad command line");
-        return;
+        return COMMAND_OK;
     }
 
     buf = item_cachedump(id, limit, &bytes);
     if (buf == 0) {
         out_string(c, "SERVER_ERROR out of memory");
-        return;
+        return COMMAND_OK;
     }
 
     c->write_and_free = buf;
