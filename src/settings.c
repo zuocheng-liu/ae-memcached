@@ -196,4 +196,3 @@ void usage_license(void) {
 
     return;
 }
-

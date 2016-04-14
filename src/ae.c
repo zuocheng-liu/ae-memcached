@@ -35,25 +35,46 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/epoll.h>
+#include <poll.h>
+#include <string.h>
+#include <time.h>
+#include <errno.h>
+
 
 #include "ae.h"
 
 /* Include the best multiplexing layer supported by this system.
  * The following should be ordered by performances, descending. */
-#include <sys/epoll.h>
 
 typedef struct aeApiState {
     int epfd;
-    struct epoll_event events[AE_SETSIZE];
+    struct epoll_event *events;
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventLoop) {
-    aeApiState *state = (aeApiState *)malloc(sizeof(aeApiState));
+    aeApiState *state = malloc(sizeof(aeApiState));
 
     if (!state) return -1;
-    state->epfd = epoll_create(1024); /* 1024 is just an hint for the kernel */
-    if (state->epfd == -1) return -1;
+    state->events = malloc(sizeof(struct epoll_event)*eventLoop->setsize);
+    if (!state->events) {
+        free(state);
+        return -1;
+    }
+    state->epfd = epoll_create(1024); /* 1024 is just a hint for the kernel */
+    if (state->epfd == -1) {
+        free(state->events);
+        free(state);
+        return -1;
+    }
     eventLoop->apidata = state;
+    return 0;
+}
+
+static int aeApiResize(aeEventLoop *eventLoop, int setsize) {
+    aeApiState *state = eventLoop->apidata;
+
+    state->events = realloc(state->events, sizeof(struct epoll_event)*setsize);
     return 0;
 }
 
@@ -61,6 +82,7 @@ static void aeApiFree(aeEventLoop *eventLoop) {
     aeApiState *state = eventLoop->apidata;
 
     close(state->epfd);
+    free(state->events);
     free(state);
 }
 
@@ -105,7 +127,7 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
     aeApiState *state = eventLoop->apidata;
     int retval, numevents = 0;
 
-    retval = epoll_wait(state->epfd,state->events,AE_SETSIZE,
+    retval = epoll_wait(state->epfd,state->events,eventLoop->setsize,
             tvp ? (tvp->tv_sec*1000 + tvp->tv_usec/1000) : -1);
     if (retval > 0) {
         int j;
@@ -117,6 +139,8 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
 
             if (e->events & EPOLLIN) mask |= AE_READABLE;
             if (e->events & EPOLLOUT) mask |= AE_WRITABLE;
+            if (e->events & EPOLLERR) mask |= AE_WRITABLE;
+            if (e->events & EPOLLHUP) mask |= AE_WRITABLE;
             eventLoop->fired[j].fd = e->data.fd;
             eventLoop->fired[j].mask = mask;
         }
@@ -128,30 +152,71 @@ static char *aeApiName(void) {
     return "epoll";
 }
 
-aeEventLoop *aeCreateEventLoop(void) {
+aeEventLoop *aeCreateEventLoop(int setsize) {
     aeEventLoop *eventLoop;
     int i;
 
-    eventLoop = (aeEventLoop *)malloc(sizeof(*eventLoop));
-    if (!eventLoop) return NULL;
+    if ((eventLoop = malloc(sizeof(*eventLoop))) == NULL) goto err;
+    eventLoop->events = malloc(sizeof(aeFileEvent)*setsize);
+    eventLoop->fired = malloc(sizeof(aeFiredEvent)*setsize);
+    if (eventLoop->events == NULL || eventLoop->fired == NULL) goto err;
+    eventLoop->setsize = setsize;
+    eventLoop->lastTime = time(NULL);
     eventLoop->timeEventHead = NULL;
     eventLoop->timeEventNextId = 0;
     eventLoop->stop = 0;
     eventLoop->maxfd = -1;
     eventLoop->beforesleep = NULL;
-    if (aeApiCreate(eventLoop) == -1) {
-        free(eventLoop);
-        return NULL;
-    }
+    if (aeApiCreate(eventLoop) == -1) goto err;
     /* Events with mask == AE_NONE are not set. So let's initialize the
      * vector with it. */
-    for (i = 0; i < AE_SETSIZE; i++)
+    for (i = 0; i < setsize; i++)
         eventLoop->events[i].mask = AE_NONE;
     return eventLoop;
+
+err:
+    if (eventLoop) {
+        free(eventLoop->events);
+        free(eventLoop->fired);
+        free(eventLoop);
+    }
+    return NULL;
+}
+
+/* Return the current set size. */
+int aeGetSetSize(aeEventLoop *eventLoop) {
+    return eventLoop->setsize;
+}
+
+/* Resize the maximum set size of the event loop.
+ * If the requested set size is smaller than the current set size, but
+ * there is already a file descriptor in use that is >= the requested
+ * set size minus one, AE_ERR is returned and the operation is not
+ * performed at all.
+ *
+ * Otherwise AE_OK is returned and the operation is successful. */
+int aeResizeSetSize(aeEventLoop *eventLoop, int setsize) {
+    int i;
+
+    if (setsize == eventLoop->setsize) return AE_OK;
+    if (eventLoop->maxfd >= setsize) return AE_ERR;
+    if (aeApiResize(eventLoop,setsize) == -1) return AE_ERR;
+
+    eventLoop->events = realloc(eventLoop->events,sizeof(aeFileEvent)*setsize);
+    eventLoop->fired = realloc(eventLoop->fired,sizeof(aeFiredEvent)*setsize);
+    eventLoop->setsize = setsize;
+
+    /* Make sure that if we created new slots, they are initialized with
+     * an AE_NONE mask. */
+    for (i = eventLoop->maxfd+1; i < setsize; i++)
+        eventLoop->events[i].mask = AE_NONE;
+    return AE_OK;
 }
 
 void aeDeleteEventLoop(aeEventLoop *eventLoop) {
     aeApiFree(eventLoop);
+    free(eventLoop->events);
+    free(eventLoop->fired);
     free(eventLoop);
 }
 
@@ -162,7 +227,10 @@ void aeStop(aeEventLoop *eventLoop) {
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
-    if (fd >= AE_SETSIZE) return AE_ERR;
+    if (fd >= eventLoop->setsize) {
+        errno = ERANGE;
+        return AE_ERR;
+    }
     aeFileEvent *fe = &eventLoop->events[fd];
 
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
@@ -178,10 +246,11 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
 
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
 {
-    if (fd >= AE_SETSIZE) return;
+    if (fd >= eventLoop->setsize) return;
     aeFileEvent *fe = &eventLoop->events[fd];
-
     if (fe->mask == AE_NONE) return;
+
+    aeApiDelEvent(eventLoop, fd, mask);
     fe->mask = fe->mask & (~mask);
     if (fd == eventLoop->maxfd && fe->mask == AE_NONE) {
         /* Update the max fd */
@@ -191,7 +260,13 @@ void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
             if (eventLoop->events[j].mask != AE_NONE) break;
         eventLoop->maxfd = j;
     }
-    aeApiDelEvent(eventLoop, fd, mask);
+}
+
+int aeGetFileEvents(aeEventLoop *eventLoop, int fd) {
+    if (fd >= eventLoop->setsize) return 0;
+    aeFileEvent *fe = &eventLoop->events[fd];
+
+    return fe->mask;
 }
 
 static void aeGetTime(long *seconds, long *milliseconds)
@@ -224,7 +299,7 @@ long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
     long long id = eventLoop->timeEventNextId++;
     aeTimeEvent *te;
 
-    te = (aeTimeEvent *)malloc(sizeof(*te));
+    te = malloc(sizeof(*te));
     if (te == NULL) return AE_ERR;
     te->id = id;
     aeAddMillisecondsToNow(milliseconds,&te->when_sec,&te->when_ms);
@@ -289,6 +364,24 @@ static int processTimeEvents(aeEventLoop *eventLoop) {
     int processed = 0;
     aeTimeEvent *te;
     long long maxId;
+    time_t now = time(NULL);
+
+    /* If the system clock is moved to the future, and then set back to the
+     * right value, time events may be delayed in a random way. Often this
+     * means that scheduled operations will not be performed soon enough.
+     *
+     * Here we try to detect system clock skews, and force all the time
+     * events to be processed ASAP when this happens: the idea is that
+     * processing events earlier is less dangerous than delaying them
+     * indefinitely, and practice suggests it is. */
+    if (now < eventLoop->lastTime) {
+        te = eventLoop->timeEventHead;
+        while(te) {
+            te->when_sec = 0;
+            te = te->next;
+        }
+    }
+    eventLoop->lastTime = now;
 
     te = eventLoop->timeEventHead;
     maxId = eventLoop->timeEventNextId-1;
@@ -338,7 +431,7 @@ static int processTimeEvents(aeEventLoop *eventLoop) {
 /* Process every pending time event, then every pending file event
  * (that may be registered by time event callbacks just processed).
  * Without special flags the function sleeps until some file event
- * fires, or when the next time event occurrs (if any).
+ * fires, or when the next time event occurs (if any).
  *
  * If flags is 0, the function does nothing and returns.
  * if flags has AE_ALL_EVENTS set, all the kind of events are processed.
@@ -385,7 +478,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
             if (tvp->tv_usec < 0) tvp->tv_usec = 0;
         } else {
             /* If we have to check for events but need to return
-             * ASAP because of AE_DONT_WAIT we need to se the timeout
+             * ASAP because of AE_DONT_WAIT we need to set the timeout
              * to zero */
             if (flags & AE_DONT_WAIT) {
                 tv.tv_sec = tv.tv_usec = 0;
@@ -424,24 +517,22 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
     return processed; /* return the number of processed file/time events */
 }
 
-/* Wait for millseconds until the given file descriptor becomes
+/* Wait for milliseconds until the given file descriptor becomes
  * writable/readable/exception */
 int aeWait(int fd, int mask, long long milliseconds) {
-    struct timeval tv;
-    fd_set rfds, wfds, efds;
+    struct pollfd pfd;
     int retmask = 0, retval;
 
-    tv.tv_sec = milliseconds/1000;
-    tv.tv_usec = (milliseconds%1000)*1000;
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-    FD_ZERO(&efds);
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = fd;
+    if (mask & AE_READABLE) pfd.events |= POLLIN;
+    if (mask & AE_WRITABLE) pfd.events |= POLLOUT;
 
-    if (mask & AE_READABLE) FD_SET(fd,&rfds);
-    if (mask & AE_WRITABLE) FD_SET(fd,&wfds);
-    if ((retval = select(fd+1, &rfds, &wfds, &efds, &tv)) > 0) {
-        if (FD_ISSET(fd,&rfds)) retmask |= AE_READABLE;
-        if (FD_ISSET(fd,&wfds)) retmask |= AE_WRITABLE;
+    if ((retval = poll(&pfd, 1, milliseconds))== 1) {
+        if (pfd.revents & POLLIN) retmask |= AE_READABLE;
+        if (pfd.revents & POLLOUT) retmask |= AE_WRITABLE;
+	if (pfd.revents & POLLERR) retmask |= AE_WRITABLE;
+        if (pfd.revents & POLLHUP) retmask |= AE_WRITABLE;
         return retmask;
     } else {
         return retval;

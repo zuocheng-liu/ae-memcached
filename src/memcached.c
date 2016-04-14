@@ -1450,7 +1450,7 @@ int main (int argc, char **argv) {
     settings_init(&settings);
     
     /* create AE event loop  */
-    g_el = aeCreateEventLoop();
+    g_el = aeCreateEventLoop(AE_SETSIZE);
 
      
     /* process arguments */
