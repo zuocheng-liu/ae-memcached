@@ -5,6 +5,11 @@
 #include "items.h"
 #include "global.h"
 
+/* FreeBSD 4.x doesn't have IOV_MAX exposed. */
+#ifndef IOV_MAX
+# define IOV_MAX 1024
+#endif
+
 enum conn_states {
     conn_listening,  /* the socket which listens for connections */
     conn_read,       /* reading in a command line */
@@ -87,5 +92,20 @@ void conn_close(conn *c);
 void conn_init(void);
 
 void out_string(conn *c, char *str);
+
+/*
+ * Adds data to the list of pending data that will be written out to a
+ * connection.
+ *
+ * Returns 0 on success, -1 on out-of-memory.
+ */
+int add_iov(conn *c, const void *buf, int len); 
+
+/*
+ * Adds a message header to a connection.
+ *
+ * Returns 0 on success, -1 on out-of-memory.
+ */
+int add_msghdr(conn *c);
 
 #endif // end definition of CONNECTION_H
