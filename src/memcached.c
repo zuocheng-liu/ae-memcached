@@ -231,7 +231,6 @@ u_int32_t command_get(char *command, conn *c, int binary) {
     char key[251];
     int next;
     item *it;
-    rel_time_t now  = current_time;
     char *start = command + 4;
     int i = 0;
     if (settings.managed) {
@@ -462,6 +461,10 @@ u_int32_t delete_handler(char *command, int argc, char ** argv) {
         }
     }
     res = sscanf(command, "%*s %250s %ld", key, &exptime);
+    if (res < 0) {
+        out_string(c, "ERROR");
+        return COMMAND_OK;
+    }
     it = get_item(key);
     if (!it) {
         out_string(c, "NOT_FOUND");
@@ -577,7 +580,6 @@ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
 
 u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
     conn *c = (conn*)argv;
-    rel_time_t now = current_time;
     stats_reset(&stats);
     out_string(c, "RESET");
     return COMMAND_OK;
@@ -1158,7 +1160,7 @@ void drive_machine(conn *c) {
              */
             if (c->iovused == 0) {
                 if (add_iov(c, c->wcurr, c->wbytes) ||
-                        c->udp && build_udp_headers(c)) {
+                        (c->udp && build_udp_headers(c))) {
                     LOG_INFO("Couldn't build response\n");
                     conn_set_state(c, conn_closing);
                     break;
@@ -1416,7 +1418,6 @@ int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData)
 
 int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
     int i, j=0;
-    rel_time_t now = current_time;
     for (i=0; i<delcurr; i++) {
         item *it = todelete[i];
         if (item_delete_lock_over(it)) {
@@ -1444,7 +1445,7 @@ void sig_handler(int sig) {
 
 int main (int argc, char **argv) {
     conn *l_conn;
-    conn *u_conn;
+    /*conn *u_conn;*/
     struct passwd *pw;
     struct sigaction sa;
     struct rlimit rlim;

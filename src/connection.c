@@ -284,7 +284,7 @@ int add_iov(conn *c, const void *buf, int len) {
 
         /* We may need to start a new msghdr if this one is full. */
         if (m->msg_iovlen == IOV_MAX ||
-                limit_to_mtu && c->msgbytes >= UDP_MAX_PAYLOAD_SIZE) {
+                (limit_to_mtu && c->msgbytes >= UDP_MAX_PAYLOAD_SIZE)) {
             add_msghdr(c);
             m = &c->msglist[c->msgused - 1];
         }
