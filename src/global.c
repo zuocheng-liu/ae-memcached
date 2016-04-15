@@ -1,5 +1,8 @@
 #include "global.h"
 
+int l_socket = 0;
+int u_socket = -1;
+
 struct aeEventLoop *g_el;
 command_service_ptr g_cmd_srv;
 

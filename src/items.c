@@ -105,7 +105,9 @@ item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
 
     assert(it != heads[it->slabs_clsid]);
 
-    it->next = it->prev = it->h_next = 0;
+    it->next = 0;
+    it->prev = 0;
+    it->h_next = 0;
     it->refcount = 0;
     it->it_flags = 0;
     it->nkey = len;

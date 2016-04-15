@@ -188,8 +188,6 @@ void conn_close(conn *c) {
     return;
 }
 
-
-
 /*
  * Reallocates memory and updates a buffer size if successful.
  */
@@ -203,7 +201,7 @@ int do_realloc(void **orig, int newsize, int bytes_per_item, int *size) {
     return 0;
 }
 
- /*
+/*
  * Shrinks a connection's buffers if they're too big.  This prevents
  * periodic large "get" requests from permanently chewing lots of server
  * memory.

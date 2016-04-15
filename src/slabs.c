@@ -24,12 +24,17 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "memcached.h"
+#include "global.h"
+#include "slabs.h"
+#include "items.h"
 
 static slabclass_t slabclass[POWER_LARGEST+1];
 static size_t mem_limit = 0;
 static size_t mem_malloced = 0;
 static int power_largest;
+
+
+static void slabs_preallocate (const unsigned int maxslabs);
 
 /*
  * Figures out which slab class (chunk size) is required to store an item of
@@ -105,7 +110,13 @@ void slabs_init(size_t limit, double factor) {
 #endif
 }
 
-void slabs_preallocate (unsigned int maxslabs) {
+/* Preallocate as many slab pages as possible (called from slabs_init)
+   on start-up, so users don't get confused out-of-memory errors when
+   they do have free (in-slab) space, but no space to make new slabs.
+   if maxslabs is 18 (POWER_LARGEST - POWER_SMALLEST + 1), then all
+   slab types can be made.  if max memory is less than 18 MB, only the
+   smaller ones will be made.  */
+static void slabs_preallocate (const unsigned int maxslabs) {
     int i;
     unsigned int prealloc = 0;
 
@@ -123,7 +134,7 @@ void slabs_preallocate (unsigned int maxslabs) {
 
 }
 
-static int grow_slab_list (unsigned int id) {
+static int grow_slab_list (const unsigned int id) {
     slabclass_t *p = &slabclass[id];
     if (p->slabs == p->list_size) {
         size_t new_size =  p->list_size ? p->list_size * 2 : 16;

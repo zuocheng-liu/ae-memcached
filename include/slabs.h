@@ -25,7 +25,7 @@ typedef struct {
     unsigned int list_size; /* size of prev array */
 
     unsigned int killing;  /* index+1 of dying slab, or zero if none */
-} slabclass_t;
+} slabclass_t, *slabclass_ptr;
 
 
 /* slabs memory allocation */
@@ -34,14 +34,6 @@ typedef struct {
    0 if no limit. 2nd argument is the growth factor; each slab will use a chunk
    size equal to the previous slab's chunk size times this factor. */
 void slabs_init(size_t limit, double factor);
-
-/* Preallocate as many slab pages as possible (called from slabs_init)
-   on start-up, so users don't get confused out-of-memory errors when
-   they do have free (in-slab) space, but no space to make new slabs.
-   if maxslabs is 18 (POWER_LARGEST - POWER_SMALLEST + 1), then all
-   slab types can be made.  if max memory is less than 18 MB, only the
-   smaller ones will be made.  */
-void slabs_preallocate (unsigned int maxslabs);
 
 /* Given object size, return id to use when allocating/freeing memory for object */
 /* 0 means error: can't store such a large object */

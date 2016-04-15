@@ -1466,10 +1466,7 @@ int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clie
 }
 
 
-int l_socket=0;
-int u_socket=-1;
-
-void sig_handler(int sig) {
+void sigint_handler(int sig) {
     AE_NOTUSED(sig);
     printf("SIGINT handled.\n");
     exit(0);
@@ -1487,7 +1484,7 @@ int main (int argc, char **argv) {
     setbuf(stderr, NULL);
 
     /* handle SIGINT */
-    signal(SIGINT, sig_handler);
+    signal(SIGINT, sigint_handler);
 
     /* init settings */
     settings_init(&settings);
@@ -1495,7 +1492,6 @@ int main (int argc, char **argv) {
     /* create AE event loop  */
     g_el = aeCreateEventLoop(AE_SETSIZE);
 
-     
     /* process arguments */
     process_arguments(&settings, argc, argv);
 
@@ -1663,7 +1659,6 @@ int main (int argc, char **argv) {
     /* create command service */
     g_cmd_srv = command_service_create();
     /* register commands */
-    /* reading commands */
     command_service_register_handler(g_cmd_srv, "get ", 4, FIXED_PREFIX, get_handler);
     command_service_register_handler(g_cmd_srv, "bget ", 5, FIXED_PREFIX, bget_handler);
 
