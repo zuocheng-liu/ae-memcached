@@ -263,7 +263,6 @@ char* slabs_stats(int *buflen) {
     return buf;
 }
 
-#ifdef ALLOW_SLABS_REASSIGN
 /* Blows away all the items in a slab class and moves its slabs to another
    class. This is only used by the "slabs reassign" command, for manual tweaking
    of memory allocation. It's disabled by default since it requires that all
@@ -312,7 +311,7 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
         for (fi=p->sl_curr-1; fi>=0; fi--) {
             if (p->slots[fi] >= slab && p->slots[fi] < slab_end) {
                 p->sl_curr--;
-                if (p->sl_curr > fi) p->slots[fi] = p->slots[p->sl_curr];
+                if ((int)p->sl_curr > fi) p->slots[fi] = p->slots[p->sl_curr];
             }
         }
     }
@@ -333,4 +332,3 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
     }
     return 1;
 }
-#endif

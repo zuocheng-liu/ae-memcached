@@ -13,7 +13,7 @@ command_service_ptr command_service_create() {
     return cmd_srv;
 }
 
-u_int32_t command_service_register_handler(
+int32_t command_service_register_handler(
         command_service_ptr service, 
         char *cmd, 
         size_t cmd_len, 
@@ -69,7 +69,7 @@ u_int32_t command_service_register_handler(
     return 0;
 } 
 
-u_int32_t command_service_run(command_service_ptr service, char *cmd_s, int argc, char **argv) {
+int32_t command_service_run(command_service_ptr service, char *cmd_s, int argc, char **argv) {
     command_info_ptr cmd;
     for (cmd = service->command_list; NULL != cmd; cmd = cmd->next) {
         if (FIXED_PREFIX == cmd->type && strncmp(cmd_s, cmd->cmd, cmd->cmd_len) == 0) {

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#define COMMAND_NOTUSED(V) ((void) V)
+
 typedef enum command_type {
     FULL_MATCH = 0,
     FIXED_PREFIX = 1
@@ -15,7 +17,7 @@ enum command_retrun_value {
     COMMAND_ERROR = -1
 };
 
-typedef u_int32_t (*handler_t)(char *,int, char **);
+typedef int32_t (*handler_t)(char *,int, char **);
 
 typedef struct command_info {
     char *cmd;
@@ -34,9 +36,9 @@ typedef struct command_service {
 /* init a new command service */
 command_service_ptr command_service_create();
 /* register a new command and a handler to execute the task accordingly */
-u_int32_t command_service_register_handler(command_service_ptr, char *cmd, size_t cmd_len, command_type cmd_type, handler_t handler); 
+int32_t command_service_register_handler(command_service_ptr, char *cmd, size_t cmd_len, command_type cmd_type, handler_t handler); 
 /* execute the command */
-u_int32_t command_service_run(command_service_ptr service, char *cmd,int argc, char **argv);
+int32_t command_service_run(command_service_ptr service, char *cmd,int argc, char **argv);
 /* destory a command service, release the memory alloced */
 void command_service_destory(command_service_ptr service);
 #endif /* End definition of COMMAND_H */

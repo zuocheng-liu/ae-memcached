@@ -255,7 +255,7 @@ char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int 
     if (buffer == 0) return 0;
     bufcurr = 0;
 
-    while (it && (!limit || shown < limit)) {
+    while (it && (!limit || shown < (int)limit)) {
         len = sprintf(temp, "ITEM %s [%u b; %lu s]\r\n", ITEM_key(it), it->nbytes - 2, it->time + stats.started);
         if (bufcurr + len + 6 > memlimit)  /* 6 is END\r\n\0 */
             break;

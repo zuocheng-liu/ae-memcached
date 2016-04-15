@@ -46,6 +46,7 @@
 #include <stdio.h>  
 #include <stdlib.h>  
 #include <string.h>  
+#include <malloc.h>  
 
 #include "ae.h"
 #include "assoc.h"
@@ -227,7 +228,7 @@ err:
      return;
 }
 
-u_int32_t command_get(char *command, conn *c, int binary) {
+int32_t command_get(char *command, conn *c) {
     char key[251];
     int next;
     item *it;
@@ -300,20 +301,22 @@ u_int32_t command_get(char *command, conn *c, int binary) {
     return COMMAND_OK;
 }
 
-u_int32_t bget_handler(char *command, int argc, char ** argv) {
+int32_t bget_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     ((conn *)argv)->binary = 1;
-    return command_get(command, (conn *)argv, 1);
+    return command_get(command, (conn *)argv);
 }
 
-u_int32_t get_handler(char *command, int argc, char ** argv) {
-    return command_get(command, (conn *)argv, 0);
+int32_t get_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
+    return command_get(command, (conn *)argv);
 }
 
 /*
  * for commands set/add/replace, we build an item and read the data
  * directly into it, then continue in nread_complete().
  */
-u_int32_t command_replace(char *command, conn *c, int com_type) {
+int32_t command_replace(char *command, conn *c, int com_type) {
     int comm = com_type;
     char key[251];
     int flags;
@@ -362,19 +365,22 @@ u_int32_t command_replace(char *command, conn *c, int com_type) {
     return COMMAND_OK;
 }
 
-u_int32_t replace_handler(char *command, int argc, char ** argv) {
+int32_t replace_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     return command_replace(command, (conn *)argv, NREAD_REPLACE);
 }
 
-u_int32_t set_handler(char *command, int argc, char ** argv) {
+int32_t set_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     return command_replace(command, (conn *)argv, NREAD_SET);
 }
 
-u_int32_t add_handler(char *command, int argc, char ** argv) {
+int32_t add_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     return command_replace(command, (conn *)argv, NREAD_ADD);
 }
 
-u_int32_t command_vary_delta(char *command, conn *c, int incr) {
+int32_t command_vary_delta(char *command, conn *c, int incr) {
     char temp[32];
     unsigned int value;
     item *it;
@@ -433,15 +439,18 @@ u_int32_t command_vary_delta(char *command, conn *c, int incr) {
     return COMMAND_OK;
 }
 
-u_int32_t incr_handler(char *command, int argc, char ** argv) {
+int32_t incr_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     return command_vary_delta(command, (conn *)argv, 1);
 }
 
-u_int32_t decr_handler(char *command, int argc, char ** argv) {
+int32_t decr_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     return command_vary_delta(command, (conn *)argv, 0);
 }
 
-u_int32_t delete_handler(char *command, int argc, char ** argv) {
+int32_t delete_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     char key[251];
     item *it;
     int res;
@@ -499,7 +508,8 @@ u_int32_t delete_handler(char *command, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t own_handler(char *command, int argc, char ** argv) {
+int32_t own_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     int bucket, gen;
     char *start = command+4;
     conn *c = (conn*)argv;
@@ -521,7 +531,8 @@ u_int32_t own_handler(char *command, int argc, char ** argv) {
     }
 }
 
-u_int32_t disown_handler(char *command, int argc, char ** argv) {
+int32_t disown_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     int bucket;
     char *start = command+7;
     conn *c = (conn*)argv;
@@ -543,7 +554,9 @@ u_int32_t disown_handler(char *command, int argc, char ** argv) {
     }
 }
 
-u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
     rel_time_t now = current_time;
     char temp[1024];
@@ -578,21 +591,22 @@ u_int32_t stats_handler(char *cmd_s, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t stats_reset_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_reset_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
     stats_reset(&stats);
     out_string(c, "RESET");
     return COMMAND_OK;
 }
 
-u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
-#ifdef HAVE_MALLOC_H
-#ifdef HAVE_STRUCT_MALLINFO
+int32_t stats_malloc_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
+    conn *c = (conn*)argv;
     char temp[512];
     struct mallinfo info;
     char *pos = temp;
-    conn *c = (conn*)argv;
-    rel_time_t now = current_time;
     info = mallinfo();
     pos += sprintf(pos, "STAT arena_size %d\r\n", info.arena);
     pos += sprintf(pos, "STAT free_chunks %d\r\n", info.ordblks);
@@ -605,12 +619,12 @@ u_int32_t stats_malloc_handler(char *cmd_s, int argc, char ** argv) {
     pos += sprintf(pos, "STAT total_free %d\r\n", info.fordblks);
     pos += sprintf(pos, "STAT releasable_space %d\r\nEND", info.keepcost);
     out_string(c, temp);
-#endif /* HAVE_STRUCT_MALLINFO */
-#endif /* HAVE_MALLOC_H */
     return COMMAND_OK;
 }
 
-u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_maps_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     char *wbuf;
     int wsize = 8192; /* should be enough */
     int fd;
@@ -653,7 +667,8 @@ u_int32_t stats_maps_handler(char *cmd_s, int argc, char ** argv) {
 }
 
 
-u_int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
+int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     char *buf;
     unsigned int bytes, id, limit = 0;
     conn *c = (conn*)argv;
@@ -678,7 +693,9 @@ u_int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_slabs_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     int bytes = 0;
     char *buf = slabs_stats(&bytes);
     conn *c = (conn*)argv;
@@ -695,7 +712,9 @@ u_int32_t stats_slabs_handler(char *cmd_s, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t stats_items_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_items_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
     char buffer[4096];
     item_stats(buffer, 4096);
@@ -703,7 +722,9 @@ u_int32_t stats_items_handler(char *cmd_s, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
+int32_t stats_sizes_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     int bytes = 0;
     char *buf = item_stats_sizes(&bytes);
     conn *c = (conn*)argv;
@@ -721,46 +742,49 @@ u_int32_t stats_sizes_handler(char *cmd_s, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t version_handler(char *cmd_s, int argc, char ** argv) {
+int32_t version_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
     out_string(c, "VERSION " VERSION);
     return COMMAND_OK;
 }
 
-u_int32_t quit_handler(char *cmd_s, int argc, char ** argv) {
+int32_t quit_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
     conn_set_state(c, conn_closing);
     return COMMAND_OK;
 }
 
-u_int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     conn *c = (conn*)argv;
-#ifdef ALLOW_SLABS_REASSIGN
     int src, dst;
     char *start = command + 15;
     if (sscanf(start, "%u %u\r\n", &src, &dst) == 2) {
         int rv = slabs_reassign(src, dst);
         if (rv == 1) {
             out_string(c, "DONE");
-            return;
+            return COMMAND_OK;
         }
         if (rv == 0) {
             out_string(c, "CANT");
-            return;
+            return COMMAND_OK;
         }
         if (rv == -1) {
             out_string(c, "BUSY");
-            return;
+            return COMMAND_OK;
         }
     }
     out_string(c, "CLIENT_ERROR bogus command");
-#else
-    out_string(c, "CLIENT_ERROR Slab reassignment not supported");
-#endif
+    /* out_string(c, "CLIENT_ERROR Slab reassignment not supported"); */
     return COMMAND_OK;
 }
 
-u_int32_t flush_all_handler(char *command, int argc, char ** argv) {
+int32_t flush_all_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     time_t exptime = 0;
     int res;
     conn *c = (conn*)argv;
@@ -783,7 +807,8 @@ u_int32_t flush_all_handler(char *command, int argc, char ** argv) {
     return COMMAND_OK;
 }
 
-u_int32_t bg_handler(char *command, int argc, char ** argv) {
+int32_t bg_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(argc); 
     int bucket, gen;
     char *start = command + 3;
     conn *c = (conn*)argv;
@@ -819,7 +844,7 @@ void process_command(conn *c, char *command) {
         return;
     }
 
-    if(command_service_run(g_cmd_srv, command, 1, (char **)c) < 0) {
+    if(command_service_run(g_cmd_srv, command, 0, (char **)c) < 0) {
         out_string(c, "ERROR");
     }
     return;
@@ -979,7 +1004,7 @@ int transmit(conn *c) {
 
             /* We've written some of the data. Remove the completed
                iovec entries from the list of pending writes. */
-            while (m->msg_iovlen > 0 && res >= m->msg_iov->iov_len) {
+            while (m->msg_iovlen > 0 && res >= (int)(m->msg_iov->iov_len)) {
                 res -= m->msg_iov->iov_len;
                 m->msg_iovlen--;
                 m->msg_iov++;
@@ -1412,11 +1437,18 @@ void pre_gdb () {
 }
 
 int clock_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+    AE_NOTUSED(eventLoop);
+    AE_NOTUSED(id);
+    AE_NOTUSED(clientData);
     set_current_time(&stats);
     return 1000;
 }
 
 int timer_delete_handler(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+    AE_NOTUSED(eventLoop);
+    AE_NOTUSED(id);
+    AE_NOTUSED(clientData);
+    
     int i, j=0;
     for (i=0; i<delcurr; i++) {
         item *it = todelete[i];
@@ -1438,6 +1470,7 @@ int l_socket=0;
 int u_socket=-1;
 
 void sig_handler(int sig) {
+    AE_NOTUSED(sig);
     printf("SIGINT handled.\n");
     exit(0);
 }
@@ -1503,7 +1536,7 @@ int main (int argc, char **argv) {
         exit(1);
     } else {
         int maxfiles = settings.maxconns;
-        if (rlim.rlim_cur < maxfiles)
+        if ((int)rlim.rlim_cur < maxfiles)
             rlim.rlim_cur = maxfiles + 3;
         if (rlim.rlim_max < rlim.rlim_cur)
             rlim.rlim_max = rlim.rlim_cur;
