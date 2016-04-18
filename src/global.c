@@ -8,5 +8,5 @@ command_service_ptr g_cmd_srv;
 
 struct settings settings;
 struct stats stats;
-
+mem_cache_ptr mem_cache;
 volatile rel_time_t current_time;

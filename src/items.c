@@ -17,7 +17,7 @@
 #include <assert.h>
 
 #include "items.h"
-#include "slabs.h"
+#include "mem_cache.h"
 #include "assoc.h"
 
 #define LARGEST_ID 255
@@ -25,8 +25,9 @@
 static item *heads[LARGEST_ID];
 static item *tails[LARGEST_ID];
 unsigned int sizes[LARGEST_ID];
+extern mem_cache_ptr mem_cache;
 
-void item_init(void) {
+void item_init() {
     int i;
     for(i=0; i<LARGEST_ID; i++) {
         heads[i]=0;
@@ -64,11 +65,11 @@ item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
 
     ntotal = item_make_header(key, flags, nbytes, suffix, &nsuffix, &len);
 
-    id = slabs_clsid(ntotal);
+    id = mem_cache_clsid(mem_cache, ntotal);
     if (id == 0)
         return 0;
 
-    it = slabs_alloc(ntotal);
+    it = mem_cache_alloc(mem_cache, ntotal);
     if (it == 0) {
         int tries = 50;
         item *search;
@@ -95,7 +96,7 @@ item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
                 break;
             }
         }
-        it = slabs_alloc(ntotal);
+        it = mem_cache_alloc(mem_cache, ntotal);
         if (it==0) return 0;
     }
 
@@ -129,7 +130,7 @@ void item_free(item *it) {
     /* so slab size changer can tell later if item is already free or not */
     it->slabs_clsid = 0;
     it->it_flags |= ITEM_SLABBED;
-    slabs_free(it, ntotal);
+    mem_cache_free(mem_cache, it, ntotal);
 }
 
 /*
@@ -140,8 +141,7 @@ int item_size_ok(char *key, int flags, int nbytes) {
     char prefix[40];
     int keylen, nsuffix;
 
-    return slabs_clsid(item_make_header(key, flags, nbytes,
-                                        prefix, &nsuffix, &keylen)) != 0;
+    return item_make_header(key, flags, nbytes, prefix, &nsuffix, &keylen) <= 1024*1024;
 }
 
 void item_link_q(item *it) { /* item is the new head */

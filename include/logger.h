@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "settings.h"
+#include "global.h"
 
 /*
  * Macro functions

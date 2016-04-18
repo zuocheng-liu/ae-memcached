@@ -11,6 +11,7 @@
 #include "settings.h"
 #include "stats.h"
 #include "logger.h"
+#include "mem_cache.h"
 
 /*
  * Global variables
@@ -19,6 +20,7 @@ extern struct settings settings;
 extern struct stats stats;
 extern struct aeEventLoop *g_el;
 extern command_service_ptr g_cmd_srv;
+extern mem_cache_ptr mem_cache;
 
 /*
  * We keep the current time of day in a global variable that's updated by a

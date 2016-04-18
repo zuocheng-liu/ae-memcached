@@ -696,9 +696,11 @@ int32_t stats_cachedump_handler(char *command, int argc, char ** argv) {
 int32_t stats_slabs_handler(char *command, int argc, char ** argv) {
     AE_NOTUSED(command); 
     AE_NOTUSED(argc); 
+    AE_NOTUSED(argv); 
+    /*
+    conn *c = (conn*)argv;
     int bytes = 0;
     char *buf = slabs_stats(&bytes);
-    conn *c = (conn*)argv;
     if (!buf) {
         out_string(c, "SERVER_ERROR out of memory");
         return COMMAND_OK;
@@ -708,7 +710,7 @@ int32_t stats_slabs_handler(char *command, int argc, char ** argv) {
     c->wbytes = bytes;
     conn_set_state(c, conn_write);
     c->write_and_go = conn_read;
-
+    */
     return COMMAND_OK;
 }
 
@@ -759,7 +761,10 @@ int32_t quit_handler(char *command, int argc, char ** argv) {
 }
 
 int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
+    AE_NOTUSED(command); 
     AE_NOTUSED(argc); 
+    AE_NOTUSED(argv); 
+    /*
     conn *c = (conn*)argv;
     int src, dst;
     char *start = command + 15;
@@ -779,6 +784,7 @@ int32_t slabs_reassign_handler(char *command, int argc, char ** argv) {
         }
     }
     out_string(c, "CLIENT_ERROR bogus command");
+    */
     /* out_string(c, "CLIENT_ERROR Slab reassignment not supported"); */
     return COMMAND_OK;
 }
@@ -1489,11 +1495,13 @@ int main (int argc, char **argv) {
     /* init settings */
     settings_init(&settings);
     
-    /* create AE event loop  */
-    g_el = aeCreateEventLoop(AE_SETSIZE);
-
     /* process arguments */
     process_arguments(&settings, argc, argv);
+
+    /* create mem_cache instance */
+    mem_cache = mem_cache_create(48, 1.25, 40, 1024*1024, 64 * 1024*1024, 1);
+    /* create AE event loop  */
+    g_el = aeCreateEventLoop(AE_SETSIZE);
 
     if (settings.maxcore) {
         struct rlimit rlim_new;
@@ -1609,7 +1617,6 @@ int main (int argc, char **argv) {
     stats_init(&stats);
     assoc_init();
     conn_init();
-    slabs_init(settings.maxbytes, settings.factor);
 
     /* managed instance? alloc and zero a bucket array */
     if (settings.managed) {
