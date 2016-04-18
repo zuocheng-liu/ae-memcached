@@ -1499,7 +1499,7 @@ int main (int argc, char **argv) {
     process_arguments(&settings, argc, argv);
 
     /* create mem_cache instance */
-    mem_cache = mem_cache_create(48, 1.25, 40, 1024*1024, 64 * 1024*1024, 1);
+    mem_cache = mem_cache_create(48, 1.25, 40, 1024*1024, settings.maxbytes, 1);
     /* create AE event loop  */
     g_el = aeCreateEventLoop(AE_SETSIZE);
 
