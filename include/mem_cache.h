@@ -9,12 +9,12 @@
 
 /* powers-of-N allocation structures */
 typedef struct mem_cache{
-    size_t mem_limit;
     double factor;
     size_t base_chunk_size;
     size_t power_block;
     size_t power_smallest;
     size_t power_largest;
+    size_t mem_limit;
     size_t mem_malloced;
     slab_t **slabclass; /* Array of slab pointers, index 0 is reserved. */
 } mem_cache_t, *mem_cache_ptr;

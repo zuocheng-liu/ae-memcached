@@ -36,6 +36,7 @@ mem_cache_ptr mem_cache_create(size_t base_chunk_size,
     }
 
     mem_cache->mem_limit = mem_limit;
+    mem_cache->mem_malloced = 0;
     mem_cache->factor = factor;
     mem_cache->power_block = power_block;
     mem_cache->base_chunk_size = base_chunk_size;
@@ -61,14 +62,36 @@ mem_cache_ptr mem_cache_create(size_t base_chunk_size,
 }
 
 void *mem_cache_alloc(mem_cache_ptr mem_cache, size_t size) {
+    void *ptr;
+    slab_ptr slab;
+    size_t org_page_total;
+    
     if (NULL == mem_cache || size <= 0) {
         return 0;
     }
+
+    if (mem_cache->mem_malloced >= mem_cache->mem_limit) {
+        return NULL;
+    }
+
     size_t slab_id = mem_cache_clsid(mem_cache, size);
     if (slab_id <= 0) {
         return NULL;
     }
-    return slab_alloc_chunk(mem_cache->slabclass[slab_id]);
+
+    slab = mem_cache->slabclass[slab_id];
+    org_page_total = slab->page_total;
+    ptr = slab_alloc_chunk(slab);
+
+    if (NULL == ptr) {
+        return NULL;
+    }
+
+    if (org_page_total < slab->page_total) {
+        mem_cache->mem_malloced += slab->page_size;
+    }
+
+    return ptr;
 }
 
 void mem_cache_free(mem_cache_ptr mem_cache, void *ptr, size_t size) {

@@ -41,6 +41,7 @@ slab_ptr slab_create(size_t chunk_size, size_t page_size, int pre_alloc) {
     slab->chunk_size = chunk_size;
     slab->page_size = page_size;
     slab->chunk_number_per_page = page_size / chunk_size;
+    slab->page_total = 0;
     /* Preallocate as many slab pages as possible (called from mem_cache_init)
        on start-up, so users don't get confused out-of-memory errors when
        they do have free (in-slab) space, but no space to make new mem_cache.
