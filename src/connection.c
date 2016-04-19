@@ -3,8 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include "ae.h"
+#include "logger.h"
 #include "connection.h"
-#include "memcached.h"
 
 static conn **freeconns;
 static int freetotal;
@@ -159,8 +159,8 @@ void conn_close(conn *c) {
     /* delete the event, the socket and the conn */
     aeDeleteFileEvent(g_el, c->sfd, AE_READABLE); 
     aeDeleteFileEvent(g_el, c->sfd, AE_WRITABLE);
-    if (settings.verbose > 1)
-        fprintf(stderr, "<%d connection closed.\n", c->sfd);
+
+    LOG_DEBUG_F1("<%d connection closed.\n", c->sfd);
 
     close(c->sfd);
     conn_cleanup(c);
