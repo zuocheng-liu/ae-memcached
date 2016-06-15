@@ -5,6 +5,7 @@
 #include "ae.h"
 #include "logger.h"
 #include "connection.h"
+void event_handler(aeEventLoop *el, int fd, void *privdata, int mask);
 
 static conn **freeconns;
 static int freetotal;

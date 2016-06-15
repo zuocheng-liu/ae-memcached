@@ -1296,7 +1296,7 @@ int new_socket(int is_udp) {
  */
 void maximize_sndbuf(int sfd) {
     socklen_t intsize = sizeof(int);
-    int last_good;
+    int last_good = 0;
     int min, max, avg;
     int old_size;
 
