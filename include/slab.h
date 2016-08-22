@@ -3,8 +3,12 @@
 
 #include <stdlib.h>
 
-#define CHUNK_ALIGN_BYTES (sizeof(void *))
 #define PAGE_ALIGN_BYTES 1048576 /* 1M */
+#define CHUNK_ALIGN_BYTES (sizeof(void *))
+#define SLAB_MAGIC_NUMBER 0xABCDEFAA;
+
+#define GET_SLAB_FROM_CHUNK(ptr) (((slab_ptr)ptr) - 1)
+#define CHECK_SLAB_MAGIC_NUMBER(ptr) (SLAB_MAGIC_NUMBER == ptr->magic_number)
 
 typedef struct {
     size_t chunk_size;      /* sizes of chunk */
@@ -18,7 +22,7 @@ typedef struct {
     void **free_chunk_list;     /* list of chunk ptrs */
     size_t free_chunk_list_length;  /* size of previous array */
     size_t free_chunk_end;   /* first free chunk */
-
+    u_int32_t magic_number;
 } slab_t, *slab_ptr;
 
 

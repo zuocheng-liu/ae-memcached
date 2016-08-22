@@ -1494,7 +1494,6 @@ int main (int argc, char **argv) {
 
     /* init settings */
     settings_init(&settings);
-    
     /* process arguments */
     process_arguments(&settings, argc, argv);
 

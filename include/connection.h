@@ -87,6 +87,12 @@ typedef struct {
     int    gen;       /* generation requested for the bucket */
 } conn;
 
+typedef struct {
+    conn **freeconns;
+    u_int32_t freetotal;
+    u_int32_t freecurr;
+} connection_pool_t, *connection_pool_ptr;
+
 conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, int is_udp);
 void conn_set_state(conn *c, int state);
 void conn_cleanup(conn *c);

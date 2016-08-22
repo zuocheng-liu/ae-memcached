@@ -42,6 +42,7 @@ slab_ptr slab_create(size_t chunk_size, size_t page_size, int pre_alloc) {
     slab->page_size = page_size;
     slab->chunk_number_per_page = page_size / chunk_size;
     slab->page_total = 0;
+    slab->magic_number = SLAB_MAGIC_NUMBER;
     /* Preallocate as many slab pages as possible (called from mem_cache_init)
        on start-up, so users don't get confused out-of-memory errors when
        they do have free (in-slab) space, but no space to make new mem_cache.
@@ -106,12 +107,14 @@ void *slab_alloc_chunk(slab_ptr slab) {
         }
         return ptr;
     }
-
+    
     return 0;  /* shouldn't ever get here */
 }
 
 void slab_free_chunk(slab_ptr slab, void *ptr) {
-
+    if (NULL == slab || NULL == ptr) {
+        return ;
+    }
     if (slab->free_chunk_end == slab->free_chunk_list_length) { /* need more space on the free list */
         size_t new_size = slab->free_chunk_list_length ? slab->free_chunk_list_length*2 : 16;  /* 16 is arbitrary */
         void **new_list = realloc(slab->free_chunk_list, new_size * sizeof(void *));

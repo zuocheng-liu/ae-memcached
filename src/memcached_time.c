@@ -10,7 +10,6 @@ void set_current_time (struct stats *stats) {
 
 rel_time_t realtime(time_t exptime, struct stats *stats) {
     /* no. of seconds in 30 days - largest possible delta exptime */
-
     if (exptime == 0) return 0; /* 0 means never expire */
 
     if (exptime > REALTIME_MAXDELTA)
